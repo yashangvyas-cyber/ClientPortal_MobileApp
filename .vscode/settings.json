@@ -1,0 +1,14 @@
+{
+    "java.import.exclusions": [
+        "**/android/**",
+        "**/.gradle/**",
+        "**/build/**"
+    ],
+    "java.server.launchMode": "LightWeight",
+    "java.project.importOnFirstTimeStartup": "disabled",
+    "java.showBuildStatusOnStart.enabled": false,
+    "java.autobuild.enabled": false,
+    "java.import.gradle.enabled": false,
+    "java.import.maven.enabled": false,
+    "java.errors.incompleteClasspath.severity": "ignore"
+}

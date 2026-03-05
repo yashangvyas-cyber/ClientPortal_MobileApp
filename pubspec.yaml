@@ -21,3 +21,6 @@ flutter:
   uses-material-design: true
   assets:
     - assets/logo.svg
+    - assets/collabcrm_logo.svg
+    - assets/images/oneplus_13r_frame.png
+    - assets/images/iphone_17_pro_frame.png

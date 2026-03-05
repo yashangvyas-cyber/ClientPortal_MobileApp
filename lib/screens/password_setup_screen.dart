@@ -12,6 +12,8 @@ class PasswordSetupScreen extends StatefulWidget {
 
 class _PasswordSetupScreenState extends State<PasswordSetupScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _organizationCodeController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
   bool _obscurePassword = true;
@@ -20,6 +22,15 @@ class _PasswordSetupScreenState extends State<PasswordSetupScreen> {
   double _strength = 0;
   String _strengthText = 'Weak';
   Color _strengthColor = Colors.red;
+
+  @override
+  void dispose() {
+    _organizationCodeController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmController.dispose();
+    super.dispose();
+  }
 
   void _checkStrength(String value) {
     double strength = 0;
@@ -114,6 +125,46 @@ class _PasswordSetupScreenState extends State<PasswordSetupScreen> {
                     fontSize: 16,
                     color: Color(0xFF64748B),
                     height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 40),
+                const Text(
+                  'Organization Code *',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _organizationCodeController,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) return 'Please enter your organization code';
+                    return null;
+                  },
+                  decoration: InputDecoration(
+                    hintText: 'Enter organization code',
+                    filled: true,
+                    fillColor: const Color(0xFFF8FAFC),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Email Address *',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) return 'Please enter your email address';
+                    if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(value)) return 'Please enter a valid email address';
+                    return null;
+                  },
+                  decoration: InputDecoration(
+                    hintText: 'Enter email address',
+                    filled: true,
+                    fillColor: const Color(0xFFF8FAFC),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                   ),
                 ),
                 const SizedBox(height: 40),
