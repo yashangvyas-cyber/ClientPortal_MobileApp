@@ -36,45 +36,47 @@ class _MessageBoardTabState extends State<MessageBoardTab> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                color: const Color(0xFFEEF2FF),
-                shape: BoxShape.circle,
+    return SingleChildScrollView(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 64.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEEF2FF),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.campaign_outlined, size: 52, color: Color(0xFF4F46E5)),
               ),
-              child: const Icon(Icons.campaign_outlined, size: 52, color: Color(0xFF4F46E5)),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'No messages yet',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Post announcements, raise queries,\ngive feedback, or pitch your next big idea.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: Color(0xFF64748B), height: 1.5),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: _openNewMessage,
-              icon: const Icon(Icons.add),
-              label: const Text('New Message'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4F46E5),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              const SizedBox(height: 24),
+              const Text(
+                'No messages yet',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
               ),
-            ),
-          ],
+              const SizedBox(height: 8),
+              const Text(
+                'Post announcements, raise queries,\ngive feedback, or pitch your next big idea.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, color: Color(0xFF64748B), height: 1.5),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: _openNewMessage,
+                icon: const Icon(Icons.add),
+                label: const Text('New Message'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF4F46E5),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -405,20 +405,25 @@ class _DealsScreenState extends State<DealsScreen> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 64, height: 64,
-            decoration: const BoxDecoration(color: Color(0xFFEEF2FF), shape: BoxShape.circle),
-            child: const Icon(Icons.search_off_rounded, size: 32, color: Color(0xFF4F46E5)),
+    return SingleChildScrollView(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 64),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 64, height: 64,
+                decoration: const BoxDecoration(color: Color(0xFFEEF2FF), shape: BoxShape.circle),
+                child: const Icon(Icons.search_off_rounded, size: 32, color: Color(0xFF4F46E5)),
+              ),
+              const SizedBox(height: 16),
+              const Text('No deals found', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF0F172A))),
+              const SizedBox(height: 6),
+              const Text('Try a different search term', style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
+            ],
           ),
-          const SizedBox(height: 16),
-          const Text('No deals found', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF0F172A))),
-          const SizedBox(height: 6),
-          const Text('Try a different search term', style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
-        ],
+        ),
       ),
     );
   }

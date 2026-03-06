@@ -193,41 +193,43 @@ class _GroupChatTabState extends State<GroupChatTab> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: const BoxDecoration(
-                color: Color(0xFFFFFBEB),
-                shape: BoxShape.circle,
+    return SingleChildScrollView(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 64),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 80,
+                height: 80,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFFFBEB),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.chat_bubble_outline, size: 40, color: Color(0xFFF59E0B)),
               ),
-              child: const Icon(Icons.chat_bubble_outline, size: 40, color: Color(0xFFF59E0B)),
-            ),
-            const SizedBox(height: 20),
-            const Text('No conversations yet.', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-            const SizedBox(height: 8),
-            const Text(
-              'Kickstart the project collaboration.\nShare updates, ask questions, or just say hello to the team.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.5),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton.icon(
-              onPressed: () => _inputController.text = '',
-              icon: const Icon(Icons.bolt, size: 16),
-              label: const Text('Start Discussion'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4F46E5),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              const SizedBox(height: 20),
+              const Text('No conversations yet.', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+              const SizedBox(height: 8),
+              const Text(
+                'Kickstart the project collaboration.\nShare updates, ask questions, or just say hello to the team.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.5),
               ),
-            ),
-          ],
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                onPressed: () => _inputController.text = '',
+                icon: const Icon(Icons.bolt, size: 16),
+                label: const Text('Start Discussion'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF4F46E5),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

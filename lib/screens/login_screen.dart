@@ -29,6 +29,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   bool _isLoggingIn = false;
   Organization? _organization;
+  bool _showSuccess = false;
 
   @override
   void initState() {
@@ -59,27 +60,9 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     setState(() {
-      _isLoggingIn = true;
+      _isLoggingIn = false;
+      _showSuccess = true;
     });
-
-    // Simulate network delay to verify authentication
-    await Future.delayed(const Duration(seconds: 2));
-
-    if (!mounted) return;
-
-    // Save to AuthStorage so it appears in the OrgSelectionScreen next time
-    await AuthStorage.saveAccount(
-      SavedAccount(
-        orgCode: _organization!.code,
-        email: _emailController.text,
-        orgName: _organization!.name,
-      ),
-    );
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => HomeShell(organization: _organization!)),
-    );
   }
 
   @override
@@ -126,14 +109,29 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  _buildHeader(),
-                  const SizedBox(height: 32),
-                  _buildLoginForm(),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    child: _showSuccess 
+                        ? _buildSuccessState() 
+                        : _buildMainContent(),
+                  ),
                 ],
               ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildMainContent() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildHeader(),
+        const SizedBox(height: 32),
+        _buildLoginForm(),
+      ],
     );
   }
 
@@ -283,6 +281,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 8),
               TextFormField(
                 controller: _emailController,
+                readOnly: widget.prefilledEmail != null,
                 validator: (value) => (value == null || !value.contains('@'))
                     ? 'Please enter a valid email'
                     : null,
@@ -293,6 +292,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   hintText: 'name@company.com',
                   prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFF94A3B8)),
+                  suffixIcon: widget.prefilledEmail != null 
+                      ? const Icon(Icons.check_circle, color: Color(0xFF22C55E), size: 20)
+                      : null,
+                  filled: widget.prefilledEmail != null,
+                  fillColor: widget.prefilledEmail != null ? const Color(0xFFF8FAFC) : null,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
@@ -303,6 +307,20 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
+              if (widget.prefilledEmail != null) ...[
+                const SizedBox(height: 12),
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: const Text(
+                    'Not you? Use a different email',
+                    style: TextStyle(
+                      color: Color(0xFF4F46E5),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 20),
               const Text(
                 'Password *',
@@ -395,6 +413,67 @@ class _LoginScreenState extends State<LoginScreen> {
                     'Sign In',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSuccessState() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          width: 80,
+          height: 80,
+          decoration: const BoxDecoration(
+            color: Color(0xFFF0FDF4),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(Icons.check_circle_outline, size: 40, color: Color(0xFF22C55E)),
+        ),
+        const SizedBox(height: 24),
+        const Text(
+          'Signed In!',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF0F172A),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Welcome back to ${_organization?.name}.',
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Color(0xFF64748B), height: 1.5),
+        ),
+        const SizedBox(height: 32),
+        SizedBox(
+          width: double.infinity,
+          height: 48,
+          child: ElevatedButton(
+            onPressed: () {
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => HomeShell(organization: _organization!),
+                ),
+                (route) => false,
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF4F46E5),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text(
+              'Enter Portal',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
           ),
         ),
       ],

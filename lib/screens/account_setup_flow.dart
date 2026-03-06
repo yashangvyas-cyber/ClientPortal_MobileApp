@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../models/organization.dart';
 import '../services/auth_storage.dart';
 import 'home_shell.dart';
+import 'login_screen.dart';
 
 class AccountSetupFlow extends StatefulWidget {
   const AccountSetupFlow({super.key});
@@ -12,7 +13,7 @@ class AccountSetupFlow extends StatefulWidget {
 }
 
 class _AccountSetupFlowState extends State<AccountSetupFlow> {
-  final PageController _pageController = PageController();
+  int _currentStep = 1;
   
   // Step 1 Controllers
   final _step1FormKey = GlobalKey<FormState>();
@@ -28,10 +29,10 @@ class _AccountSetupFlowState extends State<AccountSetupFlow> {
   bool _obscureConfirmPassword = true;
   bool _isProcessing = false;
   Organization? _verifiedOrg;
+  bool _showSuccess = false;
 
   @override
   void dispose() {
-    _pageController.dispose();
     _orgCodeController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
@@ -67,14 +68,26 @@ class _AccountSetupFlowState extends State<AccountSetupFlow> {
       return;
     }
 
-    setState(() {
-      _verifiedOrg = org;
-    });
-
-    _pageController.nextPage(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
+    // New logic: Route based on email content (mocking account check)
+    if (!_emailController.text.toLowerCase().contains('new')) {
+      // Flow A: Returning user (Account exists)
+      if (!mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => LoginScreen(
+            workspaceId: org.code,
+            prefilledEmail: _emailController.text,
+          ),
+        ),
+      );
+    } else {
+      // Flow B: New user (Needs to set password)
+      setState(() {
+        _verifiedOrg = org;
+        _currentStep = 2;
+      });
+    }
   }
 
   void _handleStep2Submit() async {
@@ -100,23 +113,10 @@ class _AccountSetupFlowState extends State<AccountSetupFlow> {
 
     setState(() {
       _isProcessing = false;
+      _showSuccess = true;
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Account activated successfully!'),
-        backgroundColor: Colors.green,
-      ),
-    );
-
-    // Navigate to HomeShell
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(
-        builder: (context) => HomeShell(organization: _verifiedOrg!),
-      ),
-      (route) => false,
-    );
+    // Success SnackBar removed as we now show a dedicated success state
   }
 
   @override
@@ -143,19 +143,13 @@ class _AccountSetupFlowState extends State<AccountSetupFlow> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                   _buildHeader(),
-                   const SizedBox(height: 24),
-                  // We need a fixed height container for PageView if inside SingleChildScrollView
-                  SizedBox(
-                    height: 500, // Adjust based on your content needs
-                    child: PageView(
-                      controller: _pageController,
-                      physics: const NeverScrollableScrollPhysics(), // Disable swipe
-                      children: [
-                        _buildStep1(),
-                        _buildStep2(),
-                      ],
-                    ),
+                  _buildHeader(),
+                  const SizedBox(height: 24),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    child: _showSuccess 
+                        ? _buildSuccessState() 
+                        : (_currentStep == 1 ? _buildStep1() : _buildStep2()),
                   ),
                 ],
               ),
@@ -210,10 +204,9 @@ class _AccountSetupFlowState extends State<AccountSetupFlow> {
             GestureDetector(
               onTap: () {
                 if (step == 2) {
-                  _pageController.previousPage(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                  );
+                  setState(() {
+                    _currentStep = 1;
+                  });
                 } else {
                   Navigator.pop(context);
                 }
@@ -279,7 +272,7 @@ class _AccountSetupFlowState extends State<AccountSetupFlow> {
         children: [
           _buildProgressHeader(1),
           const Text(
-            'Set Up Your Account',
+            'Continue to Portal',
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -288,7 +281,7 @@ class _AccountSetupFlowState extends State<AccountSetupFlow> {
           ),
           const SizedBox(height: 8),
           const Text(
-            'Enter your organization code and email to get started.',
+            'Enter your organization code and email to continue.',
             style: TextStyle(color: Color(0xFF64748B), height: 1.5),
           ),
           const SizedBox(height: 32),
@@ -348,7 +341,7 @@ class _AccountSetupFlowState extends State<AccountSetupFlow> {
               ),
             ),
           ),
-          const Spacer(),
+          const SizedBox(height: 32),
           SizedBox(
             width: double.infinity,
             height: 48,
@@ -455,6 +448,46 @@ class _AccountSetupFlowState extends State<AccountSetupFlow> {
               ),
             ),
           const SizedBox(height: 24),
+          // Orange "New Account Detected" notice
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF7ED),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFFFDDB1)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.info_outline, color: Color(0xFFF97316), size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text(
+                        'New Account Detected',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFC2410C),
+                          fontSize: 14,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'This email hasn\'t been set up yet. Create a password to activate your access.',
+                        style: TextStyle(
+                          color: Color(0xFFC2410C),
+                          fontSize: 12,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
           const Text(
             'Set Your Password',
             style: TextStyle(
@@ -541,16 +574,15 @@ class _AccountSetupFlowState extends State<AccountSetupFlow> {
               ),
             ),
           ),
-          const Spacer(),
+          const SizedBox(height: 32),
           Row(
             children: [
               Expanded(
                 child: OutlinedButton(
                   onPressed: () {
-                    _pageController.previousPage(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                    );
+                    setState(() {
+                      _currentStep = 1;
+                    });
                   },
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
@@ -588,7 +620,7 @@ class _AccountSetupFlowState extends State<AccountSetupFlow> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Text(
-                          'Activate Account',
+                          'Activate & Sign In',
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                 ),
@@ -597,6 +629,66 @@ class _AccountSetupFlowState extends State<AccountSetupFlow> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSuccessState() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 80,
+          height: 80,
+          decoration: const BoxDecoration(
+            color: Color(0xFFF0FDF4),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(Icons.check_circle_outline, size: 40, color: Color(0xFF22C55E)),
+        ),
+        const SizedBox(height: 24),
+        const Text(
+          'Account Activated!',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF0F172A),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Your account for ${_verifiedOrg?.name} is ready.',
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Color(0xFF64748B), height: 1.5),
+        ),
+        const SizedBox(height: 32),
+        SizedBox(
+          width: double.infinity,
+          height: 48,
+          child: ElevatedButton(
+            onPressed: () {
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => HomeShell(organization: _verifiedOrg!),
+                ),
+                (route) => false,
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF4F46E5),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text(
+              'Enter Portal',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

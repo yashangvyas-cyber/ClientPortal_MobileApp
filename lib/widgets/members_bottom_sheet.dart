@@ -16,38 +16,40 @@ void showMembersBottomSheet(BuildContext context, MessageThread thread) {
             topRight: Radius.circular(20),
           ),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Drag handle
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 24),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE2E8F0),
-                  borderRadius: BorderRadius.circular(2),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Drag handle
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 24),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE2E8F0),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
-            ),
-            
-            // Client Section
-            _buildSectionHeader(Icons.person_outline, 'Client', 1),
-            _buildCompanySubheader('Apex Consulting Group'),
-            _buildMemberRow(thread.clientUser, isClient: true, isMe: thread.clientUser.fullName == 'James Mitchell'),
+              
+              // Client Section
+              _buildSectionHeader(Icons.person_outline, 'Client', 1),
+              _buildCompanySubheader('Apex Consulting Group'),
+              _buildMemberRow(thread.clientUser, isClient: true, isMe: thread.clientUser.fullName == 'James Mitchell'),
 
-            const SizedBox(height: 16),
-            const Divider(height: 1, color: Color(0xFFF1F5F9)),
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
+              const Divider(height: 1, color: Color(0xFFF1F5F9)),
+              const SizedBox(height: 16),
 
-            // Business Unit Section
-            _buildSectionHeader(Icons.business_outlined, 'Business Unit', 1),
-            _buildCompanySubheader('Yopmails'),
-            _buildMemberRow(thread.internalUser, isClient: false, isMe: thread.internalUser.fullName == 'James Mitchell'),
+              // Business Unit Section
+              _buildSectionHeader(Icons.business_outlined, 'Business Unit', 1),
+              _buildCompanySubheader('Yopmails'),
+              _buildMemberRow(thread.internalUser, isClient: false, isMe: thread.internalUser.fullName == 'James Mitchell'),
 
-            const SizedBox(height: 40),
-          ],
+              const SizedBox(height: 40),
+            ],
+          ),
         ),
       );
     },
