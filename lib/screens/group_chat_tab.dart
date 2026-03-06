@@ -14,11 +14,19 @@ class _GroupChatTabState extends State<GroupChatTab> {
   late List<GroupMessage> _messages;
   final _inputController = TextEditingController();
   final _scrollController = ScrollController();
+  bool _canSend = false;
 
   @override
   void initState() {
     super.initState();
-    _messages = List.from(mockGroupMessages);
+    _messages = List<GroupMessage>.from(mockGroupMessages).reversed.toList();
+    
+    _inputController.addListener(() {
+      final hasText = _inputController.text.trim().isNotEmpty;
+      if (hasText != _canSend) {
+        setState(() => _canSend = hasText);
+      }
+    });
   }
 
   @override
@@ -40,25 +48,54 @@ class _GroupChatTabState extends State<GroupChatTab> {
             color: Colors.white,
             child: Row(
               children: [
+                // Project type badge
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFFBEB),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFFFDE68A)),
+                    color: const Color(0xFFEEF2FF),
+                    borderRadius: BorderRadius.circular(4),
                   ),
-                  child: const Icon(Icons.lock_open_outlined, size: 16, color: Color(0xFFF59E0B)),
+                  child: const Text('IT', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF4F46E5))),
                 ),
                 const SizedBox(width: 12),
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('IT Support & Development', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)), overflow: TextOverflow.ellipsis),
+                      Text('Apex Consulting Group', style: TextStyle(fontSize: 12, color: Color(0xFF64748B)), overflow: TextOverflow.ellipsis),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Stacked avatars + member count
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text('Group Chat', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                    Text('Project General Channel', style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                    Text('${_messages.length + 1} Members', style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                    const SizedBox(height: 4),
+                    SizedBox(
+                      width: 56, // For 3 stacked avatars
+                      height: 24,
+                      child: Stack(
+                        children: [
+                          Positioned(
+                            right: 0,
+                            child: CircleAvatar(radius: 12, backgroundColor: Colors.amber, child: Text('JD', style: TextStyle(fontSize: 8, color: Colors.white))),
+                          ),
+                          Positioned(
+                            right: 14,
+                            child: CircleAvatar(radius: 12, backgroundColor: Colors.teal, child: Text('SU', style: TextStyle(fontSize: 8, color: Colors.white))),
+                          ),
+                          Positioned(
+                            right: 28,
+                            child: CircleAvatar(radius: 12, backgroundColor: const Color(0xFF8B5CF6), child: const Text('JM', style: TextStyle(fontSize: 8, color: Colors.white))),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
-                const Spacer(),
-                Text('${_messages.length + 1} Members', style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
               ],
             ),
           ),
@@ -67,15 +104,29 @@ class _GroupChatTabState extends State<GroupChatTab> {
           Expanded(
             child: _messages.isEmpty
                 ? _buildEmptyState()
-                : ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    itemCount: _messages.length + 1, // +1 for date divider
-                    itemBuilder: (context, index) {
-                      if (index == 0) return _buildDateDivider('Today');
-                      final msg = _messages[index - 1];
-                      return _buildMessageBubble(msg);
-                    },
+                : Align(
+                    alignment: Alignment.bottomCenter,
+                    child: ListView.builder(
+                      controller: _scrollController,
+                      reverse: true,
+                      shrinkWrap: true, // Forces items to bottom if they don't fill screen
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      itemCount: _messages.length + 1, // +1 for date divider
+                      itemBuilder: (context, index) {
+                        if (index == _messages.length) return _buildDateDivider('Today');
+                        
+                        final msg = _messages[index];
+                        
+                        // In reversed view, next index is "older", previous index is "newer"
+                        final bool isFirstInGroup = index == _messages.length - 1 || 
+                                                    _messages[index + 1].authorInitials != msg.authorInitials;
+                                                    
+                        final bool isLastInGroup = index == 0 || 
+                                                   _messages[index - 1].authorInitials != msg.authorInitials;
+
+                        return _buildMessageBubble(msg, isFirstInGroup, isLastInGroup);
+                      },
+                    ),
                   ),
           ),
 
@@ -110,7 +161,6 @@ class _GroupChatTabState extends State<GroupChatTab> {
                         hintStyle: TextStyle(color: Color(0xFFCBD5E1), fontSize: 13),
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.symmetric(vertical: 10),
-                        suffixIcon: Icon(Icons.auto_awesome, size: 18, color: Color(0xFF94A3B8)),
                       ),
                     ),
                   ),
@@ -122,15 +172,16 @@ class _GroupChatTabState extends State<GroupChatTab> {
                 ),
                 const SizedBox(width: 4),
                 GestureDetector(
-                  onTap: _sendMessage,
-                  child: Container(
+                  onTap: _canSend ? _sendMessage : null,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
                     width: 40,
                     height: 40,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF4F46E5),
+                    decoration: BoxDecoration(
+                      color: _canSend ? const Color(0xFF4F46E5) : const Color(0xFFE2E8F0),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.send_rounded, color: Colors.white, size: 18),
+                    child: Icon(Icons.send_rounded, color: _canSend ? Colors.white : const Color(0xFF94A3B8), size: 18),
                   ),
                 ),
               ],
@@ -198,27 +249,30 @@ class _GroupChatTabState extends State<GroupChatTab> {
     );
   }
 
-  Widget _buildMessageBubble(GroupMessage msg) {
+  Widget _buildMessageBubble(GroupMessage msg, bool isFirstInGroup, bool isLastInGroup) {
     final isMe = msg.isMe;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.only(bottom: isLastInGroup ? 12.0 : 4.0),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
         mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         children: [
           if (!isMe) ...[
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: const Color(0xFF64748B),
-              child: Text(msg.authorInitials, style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold)),
-            ),
+            if (isLastInGroup)
+              CircleAvatar(
+                radius: 14,
+                backgroundColor: const Color(0xFF64748B),
+                child: Text(msg.authorInitials, style: const TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
+              )
+            else
+               const SizedBox(width: 28), // placeholder 
             const SizedBox(width: 8),
           ],
           Flexible(
             child: Column(
               crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
               children: [
-                if (!isMe)
+                if (!isMe && isFirstInGroup)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 4, left: 4),
                     child: Text(msg.authorName, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
@@ -230,30 +284,37 @@ class _GroupChatTabState extends State<GroupChatTab> {
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(16),
                       topRight: const Radius.circular(16),
-                      bottomLeft: Radius.circular(isMe ? 16 : 4),
-                      bottomRight: Radius.circular(isMe ? 4 : 16),
+                      bottomLeft: Radius.circular(isMe || isLastInGroup ? 16 : 4),
+                      bottomRight: Radius.circular(!isMe || isLastInGroup ? 16 : 4),
                     ),
-                    boxShadow: [BoxShadow(color: Colors.black.withAlpha(5), blurRadius: 4, offset: const Offset(0, 2))],
+                    border: isMe ? null : Border.all(color: const Color(0xFFE2E8F0)),
+                    boxShadow: isMe 
+                        ? [BoxShadow(color: const Color(0xFF4F46E5).withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 4))] 
+                        : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4, offset: const Offset(0, 2))],
                   ),
                   child: Text(
                     msg.bodyText,
-                    style: TextStyle(fontSize: 13, color: isMe ? Colors.white : const Color(0xFF334155), height: 1.4),
+                    style: TextStyle(fontSize: 14, color: isMe ? Colors.white : const Color(0xFF1E293B), height: 1.4),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 4, left: 4, right: 4),
-                  child: Text(msg.timestamp, style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
-                ),
+                if (isLastInGroup)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4, left: 4, right: 4),
+                    child: Text(msg.timestamp, style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
+                  ),
               ],
             ),
           ),
           if (isMe) ...[
             const SizedBox(width: 8),
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: const Color(0xFF8B5CF6),
-              child: const Text('JM', style: TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold)),
-            ),
+            if (isLastInGroup)
+              const CircleAvatar(
+                radius: 14,
+                backgroundColor: Color(0xFF8B5CF6),
+                child: Text('JM', style: TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
+              )
+            else
+              const SizedBox(width: 28), // Placeholder
           ],
         ],
       ),
@@ -264,7 +325,7 @@ class _GroupChatTabState extends State<GroupChatTab> {
     final text = _inputController.text.trim();
     if (text.isEmpty) return;
     setState(() {
-      _messages.add(GroupMessage(
+      _messages.insert(0, GroupMessage(
         id: 'gm-${DateTime.now().millisecondsSinceEpoch}',
         authorName: 'James Mitchell',
         authorInitials: 'JM',
@@ -273,11 +334,12 @@ class _GroupChatTabState extends State<GroupChatTab> {
         isMe: true,
       ));
       _inputController.clear();
+      _canSend = false;
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
+          0.0,
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOut,
         );

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/organization.dart';
 import 'change_password_screen.dart';
 import 'preferences_screen.dart';
-import 'login_screen.dart';
+import 'org_selection_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   final Organization organization;
@@ -304,9 +304,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 20),
 
-          // ── WORKSPACE section ──
+          // ── BUSINESS UNIT section ──
           if (widget.organization.hasMultipleBusinessUnits) ...[
-            _sectionLabel('Workspace'),
+            _sectionLabel('Business Unit'),
             const SizedBox(height: 8),
             Container(
               decoration: BoxDecoration(
@@ -386,21 +386,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 12),
 
-          _buildSection(
-            context,
-            title: 'Support',
-            items: [
-              _SettingsTile(
-                icon: Icons.help_outline_rounded,
-                iconColor: const Color(0xFF10B981),
-                iconBg: const Color(0xFFD1FAE5),
-                label: 'Help & Support',
-                onTap: () {},
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
           // ── Log out ──
           Container(
             decoration: BoxDecoration(
@@ -427,7 +412,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const Icon(Icons.chevron_right, color: Color(0xFFEF4444)),
               onTap: () {
                 Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  MaterialPageRoute(builder: (_) => const OrgSelectionScreen()),
                   (route) => false,
                 );
               },

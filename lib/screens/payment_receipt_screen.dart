@@ -167,51 +167,6 @@ class PaymentReceiptScreen extends StatelessWidget {
                   ],
                 ),
 
-                const SizedBox(height: 48),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    Column(
-                      children: [
-                        const Text('Company Stamp', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-                        const SizedBox(height: 12),
-                        Container(
-                          width: 80,
-                          height: 80,
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: const Color(0xFF3B82F6).withAlpha(100), width: 2),
-                          ),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(color: const Color(0xFF3B82F6).withAlpha(150), width: 1),
-                            ),
-                            child: const Center(
-                              child: Text(
-                                'RECEIVED',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF3B82F6)),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    Column(
-                      children: [
-                        const Text('Signing Authority', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-                        const SizedBox(height: 12),
-                        const Icon(Icons.gesture, size: 50, color: Color(0xFF0F172A)),
-                        const SizedBox(height: 8),
-                        Container(width: 100, height: 1, color: const Color(0xFFCBD5E1)),
-                        const SizedBox(height: 4),
-                        const Text('MS Dhoni', style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
-                      ],
-                    ),
-                  ],
-                ),
                 const SizedBox(height: 40),
               ],
             ),

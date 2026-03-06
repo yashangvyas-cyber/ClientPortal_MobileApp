@@ -292,21 +292,6 @@ class _DealDetailsScreenState extends State<DealDetailsScreen> {
                   ],
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withAlpha(20),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: const Text(
-                  'Deal Owner',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.blue,
-                  ),
-                ),
-              ),
             ],
           ),
         ],

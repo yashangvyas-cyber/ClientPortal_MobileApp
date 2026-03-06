@@ -14,11 +14,20 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
   late List<DirectMessage> _messages;
   final _inputController = TextEditingController();
   final _scrollController = ScrollController();
+  bool _canSend = false;
 
   @override
   void initState() {
     super.initState();
-    _messages = List.from(mockDirectMessages[widget.member.id] ?? []);
+    // Reverse the list for inverted ListView
+    _messages = List<DirectMessage>.from(mockDirectMessages[widget.member.id] ?? []).reversed.toList();
+    
+    _inputController.addListener(() {
+      final hasText = _inputController.text.trim().isNotEmpty;
+      if (hasText != _canSend) {
+        setState(() => _canSend = hasText);
+      }
+    });
   }
 
   @override
@@ -77,12 +86,23 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                 ? _buildEmptyState()
                 : ListView.builder(
                     controller: _scrollController,
+                    reverse: true, // Anchor to bottom
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    itemCount: _messages.length + 1, // +1 for date divider
+                    itemCount: _messages.length + 1, // +1 for date divider at the very end
                     itemBuilder: (context, index) {
-                      if (index == 0) return _buildDateDivider('Today');
-                      final msg = _messages[index - 1];
-                      return _buildMessageBubble(msg);
+                      if (index == _messages.length) return _buildDateDivider('Today');
+                      
+                      final msg = _messages[index];
+                      
+                      // Check next message (which is older in time because of reverse)
+                      final bool isFirstInGroup = index == _messages.length - 1 || 
+                                                  _messages[index + 1].isMe != msg.isMe;
+                      
+                      // Check previous message (which is newer in time because of reverse)
+                      final bool isLastInGroup = index == 0 || 
+                                                 _messages[index - 1].isMe != msg.isMe;
+
+                      return _buildMessageBubble(msg, isFirstInGroup, isLastInGroup);
                     },
                   ),
           ),
@@ -128,12 +148,16 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                   onPressed: () {},
                 ),
                 GestureDetector(
-                  onTap: _sendMessage,
-                  child: Container(
+                  onTap: _canSend ? _sendMessage : null,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
                     width: 40,
                     height: 40,
-                    decoration: const BoxDecoration(color: Color(0xFF4F46E5), shape: BoxShape.circle),
-                    child: const Icon(Icons.send_rounded, color: Colors.white, size: 18),
+                    decoration: BoxDecoration(
+                      color: _canSend ? const Color(0xFF4F46E5) : const Color(0xFFE2E8F0), 
+                      shape: BoxShape.circle
+                    ),
+                    child: Icon(Icons.send_rounded, color: _canSend ? Colors.white : const Color(0xFF94A3B8), size: 18),
                   ),
                 ),
               ],
@@ -188,21 +212,24 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     );
   }
 
-  Widget _buildMessageBubble(DirectMessage msg) {
+  Widget _buildMessageBubble(DirectMessage msg, bool isFirstInGroup, bool isLastInGroup) {
     final isMe = msg.isMe;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: EdgeInsets.only(bottom: isLastInGroup ? 12.0 : 4.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         children: [
           if (!isMe) ...[
-            CircleAvatar(
-              radius: 14,
-              backgroundColor: const Color(0xFF64748B),
-              child: Text(widget.member.initials ?? widget.member.fullName[0],
-                  style: const TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
-            ),
+            if (isLastInGroup)
+              CircleAvatar(
+                radius: 14,
+                backgroundColor: const Color(0xFF64748B),
+                child: Text(widget.member.initials ?? widget.member.fullName[0],
+                    style: const TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
+              )
+            else
+              const SizedBox(width: 28), // Placeholder for avatar
             const SizedBox(width: 8),
           ],
           Flexible(
@@ -216,30 +243,37 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(16),
                       topRight: const Radius.circular(16),
-                      bottomLeft: Radius.circular(isMe ? 16 : 4),
-                      bottomRight: Radius.circular(isMe ? 4 : 16),
+                      bottomLeft: Radius.circular(isMe || isLastInGroup ? 16 : 4),
+                      bottomRight: Radius.circular(!isMe || isLastInGroup ? 16 : 4),
                     ),
-                    boxShadow: [BoxShadow(color: Colors.black.withAlpha(5), blurRadius: 4)],
+                    border: isMe ? null : Border.all(color: const Color(0xFFE2E8F0)),
+                    boxShadow: isMe 
+                        ? [BoxShadow(color: const Color(0xFF4F46E5).withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 4))] 
+                        : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4, offset: const Offset(0, 2))],
                   ),
                   child: Text(
                     msg.bodyText,
-                    style: TextStyle(fontSize: 13, color: isMe ? Colors.white : const Color(0xFF334155), height: 1.4),
+                    style: TextStyle(fontSize: 14, color: isMe ? Colors.white : const Color(0xFF1E293B), height: 1.4),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 4, left: 4, right: 4),
-                  child: Text(msg.timestamp, style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
-                ),
+                if (isLastInGroup)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4, left: 4, right: 4),
+                    child: Text(msg.timestamp, style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
+                  ),
               ],
             ),
           ),
           if (isMe) ...[
             const SizedBox(width: 8),
-            const CircleAvatar(
-              radius: 14,
-              backgroundColor: Color(0xFF8B5CF6),
-              child: Text('JM', style: TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
-            ),
+            if (isLastInGroup)
+              const CircleAvatar(
+                radius: 14,
+                backgroundColor: Color(0xFF8B5CF6),
+                child: Text('JM', style: TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
+              )
+            else
+              const SizedBox(width: 28), // Placeholder for avatar
           ],
         ],
       ),
@@ -250,7 +284,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     final text = _inputController.text.trim();
     if (text.isEmpty) return;
     setState(() {
-      _messages.add(DirectMessage(
+      _messages.insert(0, DirectMessage(
         id: 'dm-${DateTime.now().millisecondsSinceEpoch}',
         authorName: 'James Mitchell',
         bodyText: text,
@@ -258,11 +292,12 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
         isMe: true,
       ));
       _inputController.clear();
+      _canSend = false;
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
+          0.0,
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOut,
         );

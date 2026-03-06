@@ -21,6 +21,51 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> with Single
   int _visibleResourcesCount = 10;
   final TextEditingController _resourceSearchController = TextEditingController();
 
+  // Timesheet State
+  String _activeTimeFilter = 'Last 7 Days';
+  String _dateRangeText = '27 Feb 2026 - 05 Mar 2026';
+
+  void _updateTimeFilter(String filter) {
+    setState(() {
+      _activeTimeFilter = filter;
+      if (filter == 'Last 7 Days') {
+        _dateRangeText = '27 Feb 2026 - 05 Mar 2026';
+      } else if (filter == 'This Month') {
+        _dateRangeText = '01 Mar 2026 - 31 Mar 2026';
+      }
+    });
+  }
+
+  Future<void> _selectCustomDate() async {
+    final DateTimeRange? picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF0F172A),
+              onPrimary: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() {
+        _activeTimeFilter = 'Custom Date';
+        _dateRangeText = '${_formatDate(picked.start)} - ${_formatDate(picked.end)}';
+      });
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${date.day.toString().padLeft(2, '0')} ${months[date.month - 1]} ${date.year}';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -170,13 +215,11 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> with Single
           scrollDirection: Axis.horizontal,
           child: Row(
             children: [
-              _filterChip('Last 7 Days', isActive: true),
+              _filterChip('Last 7 Days', isActive: _activeTimeFilter == 'Last 7 Days', onTap: () => _updateTimeFilter('Last 7 Days')),
               const SizedBox(width: 8),
-              _filterChip('Last 30 Days'),
+              _filterChip('This Month', isActive: _activeTimeFilter == 'This Month', onTap: () => _updateTimeFilter('This Month')),
               const SizedBox(width: 8),
-              _filterChip('This Month'),
-              const SizedBox(width: 8),
-              _filterChip('Custom Date'),
+              _filterChip('Custom Date', isActive: _activeTimeFilter == 'Custom Date', onTap: _selectCustomDate),
             ],
           ),
         ),
@@ -197,7 +240,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> with Single
                 children: [
                   const Icon(Icons.calendar_today_outlined, size: 14, color: Color(0xFF94A3B8)),
                   const SizedBox(width: 8),
-                  Text('27 Feb 2026 - 05 Mar 2026', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: const Color(0xFF64748B), fontFamily: 'monospace')),
+                  Text(_dateRangeText, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B), fontFamily: 'monospace')),
                 ],
               ),
               Container(
@@ -286,19 +329,23 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> with Single
     );
   }
 
-  Widget _filterChip(String label, {bool isActive = false}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: isActive ? const Color(0xFF0F172A) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isActive ? const Color(0xFF0F172A) : const Color(0xFFE2E8F0)),
+  Widget _filterChip(String label, {bool isActive = false, VoidCallback? onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isActive ? const Color(0xFF0F172A) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: isActive ? const Color(0xFF0F172A) : const Color(0xFFE2E8F0)),
+        ),
+        child: Text(label, style: TextStyle(
+          fontSize: 12, 
+          fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+          color: isActive ? Colors.white : const Color(0xFF64748B)
+        )),
       ),
-      child: Text(label, style: TextStyle(
-        fontSize: 12, 
-        fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-        color: isActive ? Colors.white : const Color(0xFF64748B)
-      )),
     );
   }
 
@@ -478,7 +525,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> with Single
                 totalHours.toString(),
                 style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
               ),
-              const Text('hrs remaining',
+              const Text('remaining',
                   style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
               const SizedBox(height: 24),
               Row(
@@ -488,6 +535,9 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> with Single
                   const SizedBox(width: 8),
                   _hourlyStatBox('Top-Up', '+${topUp}\nhrs',
                       valueColor: const Color(0xFF10B981)),
+                  const SizedBox(width: 8),
+                  _hourlyStatBox('Total Hours', '${initiallyBought + topUp}\nhrs',
+                      valueColor: const Color(0xFFF97316)),
                   const SizedBox(width: 8),
                   _hourlyStatBox('Total Billed', '$billedHours\n',
                       valueColor: const Color(0xFF0F172A)),
@@ -1010,37 +1060,8 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> with Single
             padding: EdgeInsets.zero,
             child: Column(
               children: [
-                // Progress header
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(6),
-                              child: LinearProgressIndicator(
-                                value: progress,
-                                minHeight: 6,
-                                backgroundColor: const Color(0xFFF1F5F9),
-                                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF10B981)),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text('$completedCount of ${milestones.length} completed',
-                                style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 20),
-                      Text('${(progress * 100).toStringAsFixed(0)}%',
-                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
-                    ],
-                  ),
-                ),
-                const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                // Progress header removed as requested.
+
                 // Milestone rows
                 ...milestones.asMap().entries.map((e) {
                   final m = e.value;

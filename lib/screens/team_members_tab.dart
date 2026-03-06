@@ -59,7 +59,7 @@ class TeamMembersTab extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [BoxShadow(color: Colors.black.withAlpha(4), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 12, offset: const Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -133,23 +133,7 @@ class TeamMembersTab extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: const Color(0xFFC7D2FE)),
                   ),
-                  child: Stack(
-                    children: [
-                      const Icon(Icons.chat_bubble_outline, size: 20, color: Color(0xFF4F46E5)),
-                      Positioned(
-                        right: 0,
-                        top: 0,
-                        child: Container(
-                          width: 8,
-                          height: 8,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFEF4444),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                  child: const Icon(Icons.chat_bubble_rounded, size: 20, color: Color(0xFF4F46E5)),
                 ),
               ),
             ],

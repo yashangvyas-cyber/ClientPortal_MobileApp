@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../models/organization.dart';
+import '../services/auth_storage.dart';
 import 'home_shell.dart';
-import 'password_setup_screen.dart';
 import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   final String? workspaceId;
+  final String? prefilledEmail;
   final bool isJoining;
-  const LoginScreen({super.key, this.workspaceId, this.isJoining = false});
+  
+  const LoginScreen({
+    super.key, 
+    this.workspaceId, 
+    this.prefilledEmail,
+    this.isJoining = false
+  });
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -18,40 +25,35 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _orgCodeController = TextEditingController();
-
+  
   bool _obscurePassword = true;
   bool _isLoggingIn = false;
+  Organization? _organization;
 
   @override
   void initState() {
     super.initState();
     if (widget.workspaceId != null) {
-      _orgCodeController.text = widget.workspaceId!;
+      _organization = Organization.fromCode(widget.workspaceId!);
     }
-    _emailController.text =
-        'clientname@businessunit.com'; // Pre-filled for your convenience
-    _passwordController.text = 'password123';
+    if (widget.prefilledEmail != null) {
+      _emailController.text = widget.prefilledEmail!;
+    }
   }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    _orgCodeController.dispose();
     super.dispose();
   }
 
   void _handleSignIn() async {
     if (!_formKey.currentState!.validate()) return;
-
-    if (_orgCodeController.text.isEmpty) {
+    
+    if (_organization == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Please enter an organization code (e.g., yopmail or bluewhale)',
-          ),
-        ),
+        const SnackBar(content: Text('Organization context missing.')),
       );
       return;
     }
@@ -60,46 +62,24 @@ class _LoginScreenState extends State<LoginScreen> {
       _isLoggingIn = true;
     });
 
-    // Simulate network delay to verify organization and authenticate
+    // Simulate network delay to verify authentication
     await Future.delayed(const Duration(seconds: 2));
 
     if (!mounted) return;
 
-    final org = Organization.fromCode(_orgCodeController.text);
+    // Save to AuthStorage so it appears in the OrgSelectionScreen next time
+    await AuthStorage.saveAccount(
+      SavedAccount(
+        orgCode: _organization!.code,
+        email: _emailController.text,
+        orgName: _organization!.name,
+      ),
+    );
 
-    if (org == null) {
-      setState(() {
-        _isLoggingIn = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Organization not found. Try "yopmail" or "bluewhale"'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
-    // In a real app, we would authenticate against the organization
-    if (_emailController.text == 'clientname@businessunit.com' &&
-        _passwordController.text == 'password123') {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => HomeShell(organization: org)),
-      );
-    } else {
-      setState(() {
-        _isLoggingIn = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Invalid email or password. Use clientname@businessunit.com / password123',
-          ),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-    }
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => HomeShell(organization: _organization!)),
+    );
   }
 
   @override
@@ -122,14 +102,35 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ],
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildHeader(),
-                const SizedBox(height: 32),
-                _buildLoginForm(),
-              ],
-            ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pop(context);
+                    },
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Icon(Icons.arrow_back, color: Color(0xFF4F46E5), size: 18),
+                        SizedBox(width: 4),
+                        Text(
+                          'Back',
+                          style: TextStyle(
+                            color: Color(0xFF4F46E5),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  _buildHeader(),
+                  const SizedBox(height: 32),
+                  _buildLoginForm(),
+                ],
+              ),
           ),
         ),
       ),
@@ -137,13 +138,19 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildHeader() {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Positioned(
-          top: -16,
-          right: -16,
-          child: Container(
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SvgPicture.asset(
+            'assets/logo.svg', 
+            height: 48,
+          ),
+          const SizedBox(width: 16),
+          Container(
+            margin: const EdgeInsets.only(top: 4),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
               color: const Color(0xFFEEF2FF),
@@ -160,41 +167,105 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ),
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [SvgPicture.asset('assets/logo.svg', height: 40)],
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _buildStepTitle(String title, String subtitle) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start, // Align left
       children: [
         Text(
           title,
-          textAlign: TextAlign.center,
           style: const TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF4F46E5),
+            color: Color(0xFF0F172A), // Darker text per mockup
           ),
         ),
         const SizedBox(height: 8),
         Text(
           subtitle,
-          textAlign: TextAlign.center,
           style: const TextStyle(fontSize: 14, color: Color(0xFF64748B)),
         ),
       ],
     );
   }
 
+  Widget _buildOrgChip() {
+    if (_organization == null) return const SizedBox.shrink();
+    
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFEEF2FF), // Indigo tinted
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFC7D2FE)),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: const Color(0xFF4F46E5),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Center(
+              child: Text(
+                _organization!.name.substring(0, 2).toUpperCase(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            _organization!.name,
+            style: const TextStyle(
+              color: Color(0xFF4F46E5),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(width: 8),
+          const Icon(Icons.check, color: Color(0xFF4F46E5), size: 16),
+        ],
+      ),
+    );
+  }
+
   Widget _buildLoginForm() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildStepTitle('Welcome Back', 'Sign in to your account'),
+        _buildOrgChip(),
+        const SizedBox(height: 24),
+        Row(
+          children: [
+            const Text(
+              'Welcome back ',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF0F172A),
+              ),
+            ),
+            const Text(
+              '👋',
+              style: TextStyle(fontSize: 28),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'Sign in to continue to your portal',
+          style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+        ),
         const SizedBox(height: 32),
         Form(
           key: _formKey,
@@ -202,41 +273,11 @@ class _LoginScreenState extends State<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Organization Code *',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF64748B),
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _orgCodeController,
-                validator: (value) => (value == null || value.isEmpty)
-                    ? 'Please enter an organization code'
-                    : null,
-                decoration: InputDecoration(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  hintText: 'e.g. yopmail or bluewhale',
-                  prefixIcon: const Icon(
-                    Icons.business,
-                    color: Color(0xFF94A3B8),
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
                 'Email Address *',
                 style: TextStyle(
                   fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF64748B),
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF475569),
                 ),
               ),
               const SizedBox(height: 8),
@@ -251,9 +292,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     vertical: 12,
                   ),
                   hintText: 'name@company.com',
-                  prefixIcon: const Icon(Icons.email, color: Color(0xFF94A3B8)),
+                  prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFF94A3B8)),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
                   ),
                 ),
               ),
@@ -262,8 +308,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 'Password *',
                 style: TextStyle(
                   fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF64748B),
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF475569),
                 ),
               ),
               const SizedBox(height: 8),
@@ -278,17 +324,24 @@ class _LoginScreenState extends State<LoginScreen> {
                     horizontal: 16,
                     vertical: 12,
                   ),
+                  prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF94A3B8)),
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscurePassword
                           ? Icons.visibility_off_outlined
                           : Icons.visibility_outlined,
+                      color: const Color(0xFF94A3B8),
                     ),
                     onPressed: () =>
                         setState(() => _obscurePassword = !_obscurePassword),
                   ),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
                   ),
                 ),
               ),
@@ -316,17 +369,18 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 32),
         SizedBox(
           width: double.infinity,
           height: 48,
           child: ElevatedButton(
             onPressed: _isLoggingIn ? null : _handleSignIn,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4F46E5),
-              foregroundColor: Colors.white,
+              backgroundColor: const Color(0xFFEEF2FF),
+              foregroundColor: const Color(0xFF4F46E5),
+              elevation: 0,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
             child: _isLoggingIn
@@ -335,7 +389,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     height: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Colors.white,
                     ),
                   )
                 : const Text(
@@ -343,33 +396,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
           ),
-        ),
-        const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'First time here? ',
-              style: TextStyle(color: Color(0xFF64748B)),
-            ),
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const PasswordSetupScreen(),
-                  ),
-                );
-              },
-              child: const Text(
-                'Set up your account',
-                style: TextStyle(
-                  color: Color(0xFF4F46E5),
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
         ),
       ],
     );

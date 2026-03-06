@@ -142,7 +142,13 @@ class _MobileWrapperState extends State<MobileWrapper> {
                           orientation: _orientation,
                           screen: Container(
                             color: Colors.white,
-                            child: widget.child,
+                            // Wrap with a local MaterialApp to constrain SnackBars to this screen
+                            child: MaterialApp(
+                              debugShowCheckedModeBanner: false,
+                              home: ScaffoldMessenger(
+                                child: Scaffold(body: widget.child),
+                              ),
+                            ),
                           ),
                         ),
                 ),
@@ -220,7 +226,12 @@ class HighFidelityFrame extends StatelessWidget {
                 child: Container(
                   margin: const EdgeInsets.only(top: 32), // Reserve space for simulated status bar
                   color: Colors.white,
-                  child: child,
+                  child: MaterialApp(
+                    debugShowCheckedModeBanner: false,
+                    home: ScaffoldMessenger(
+                      child: Scaffold(body: child),
+                    ),
+                  ),
                 ),
               ),
 

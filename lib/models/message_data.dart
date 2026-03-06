@@ -23,14 +23,32 @@ class ChatParticipant {
 class MessageThread {
   final String id;
   final String projectName;
+  final String projectType; // e.g. "Hourly", "Fixed Cost", "Retainer"
   final ChatParticipant internalUser;
   final ChatParticipant clientUser;
+  
+  // Last message preview fields
+  final String? lastMessageSender;
+  final String? lastMessagePreview;
+  final String? lastMessageTimestamp;
+  
+  // Unread counts per tab
+  final int boardUnreadCount;
+  final int chatUnreadCount;
+  final int dmUnreadCount;
 
   MessageThread({
     required this.id,
     required this.projectName,
+    required this.projectType,
     required this.internalUser,
     required this.clientUser,
+    this.lastMessageSender,
+    this.lastMessagePreview,
+    this.lastMessageTimestamp,
+    this.boardUnreadCount = 0,
+    this.chatUnreadCount = 0,
+    this.dmUnreadCount = 0,
   });
 }
 
@@ -147,20 +165,41 @@ final List<MessageThread> mockMessageThreads = [
   MessageThread(
     id: 'msg-1',
     projectName: 'IT Support & Development – Apex Consulting Group',
-    internalUser: ChatParticipant(fullName: 'Super User', label: 'Yopmails'),
+    projectType: 'Hourly',
+    internalUser: ChatParticipant(fullName: 'Super User', label: 'Yopmails', initials: 'SU'),
     clientUser: ChatParticipant(fullName: 'James Mitchell', label: 'Client', initials: 'JM'),
+    lastMessageSender: 'Super User',
+    lastMessagePreview: 'I have attached the initial wireframes for your review, please le...',
+    lastMessageTimestamp: 'Today, 10:30 AM',
+    boardUnreadCount: 1,
+    chatUnreadCount: 2,
+    dmUnreadCount: 1,
   ),
   MessageThread(
     id: 'msg-2',
     projectName: 'IT Staff Augmentation – Apex Consulting Group',
-    internalUser: ChatParticipant(fullName: 'Super User', label: 'Yopmails'),
+    projectType: 'Hirebase',
+    internalUser: ChatParticipant(fullName: 'Super User', label: 'Yopmails', initials: 'SU'),
     clientUser: ChatParticipant(fullName: 'James Mitchell', label: 'Client', initials: 'JM'),
+    lastMessageSender: 'James Mitchell',
+    lastMessagePreview: 'Sounds good, let\'s proceed with the deployment.',
+    lastMessageTimestamp: 'Yesterday',
+    boardUnreadCount: 0,
+    chatUnreadCount: 1,
+    dmUnreadCount: 0,
   ),
   MessageThread(
     id: 'msg-3',
     projectName: 'IT Infrastructure Setup – Apex Consulting Group',
-    internalUser: ChatParticipant(fullName: 'Super User', label: 'Yopmails'),
+    projectType: 'Fixed Cost',
+    internalUser: ChatParticipant(fullName: 'Super User', label: 'Yopmails', initials: 'SU'),
     clientUser: ChatParticipant(fullName: 'James Mitchell', label: 'Client', initials: 'JM'),
+    lastMessageSender: 'Super User',
+    lastMessagePreview: 'Please confirm the server specifications.',
+    lastMessageTimestamp: 'Mon, 1:15 PM',
+    boardUnreadCount: 0,
+    chatUnreadCount: 0,
+    dmUnreadCount: 0,
   ),
 ];
 

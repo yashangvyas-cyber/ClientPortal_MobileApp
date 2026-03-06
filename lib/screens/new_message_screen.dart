@@ -15,6 +15,26 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
   // Visibility/Members state
   bool _jamesMitchellVisible = true;
   bool _superUserVisible = true;
+  
+  // Format state
+  final Set<String> _activeFormats = {};
+  
+  // Validation state
+  bool _canPost = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController.addListener(_validateInputs);
+    _bodyController.addListener(_validateInputs);
+  }
+  
+  void _validateInputs() {
+    final bool isValid = _titleController.text.trim().isNotEmpty && _bodyController.text.trim().isNotEmpty;
+    if (_canPost != isValid) {
+      setState(() => _canPost = isValid);
+    }
+  }
 
   @override
   void dispose() {
@@ -72,11 +92,13 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
                           const Icon(Icons.visibility_outlined, size: 16, color: Color(0xFF4F46E5)),
                           const SizedBox(width: 8),
                           const Text('Visible To: ', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
-                          Text(
-                            _visibleToText(),
-                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF4F46E5)),
+                          Expanded(
+                            child: Wrap(
+                              spacing: 6,
+                              runSpacing: 4,
+                              children: _buildVisibleChips(),
+                            ),
                           ),
-                          const Spacer(),
                           const Icon(Icons.edit, size: 14, color: Color(0xFF4F46E5)),
                         ],
                       ),
@@ -170,12 +192,13 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: _postMessage,
+                    onPressed: _canPost ? _postMessage : null,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF4F46E5),
-                      foregroundColor: Colors.white,
+                      backgroundColor: _canPost ? const Color(0xFF4F46E5) : const Color(0xFFE2E8F0),
+                      foregroundColor: _canPost ? Colors.white : const Color(0xFF94A3B8),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      elevation: _canPost ? 2 : 0,
                     ),
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -196,14 +219,66 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
   }
 
   Widget _toolbarButton(IconData icon, String tooltip) {
+    final bool isActive = _activeFormats.contains(tooltip);
     return Padding(
       padding: const EdgeInsets.only(right: 4),
-      child: IconButton(
-        icon: Icon(icon, size: 18, color: const Color(0xFF64748B)),
-        tooltip: tooltip,
-        padding: EdgeInsets.zero,
-        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-        onPressed: () {},
+      child: Container(
+        decoration: BoxDecoration(
+          color: isActive ? const Color(0xFFEEF2FF) : Colors.transparent,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: IconButton(
+          icon: Icon(icon, size: 18, color: isActive ? const Color(0xFF4F46E5) : const Color(0xFF64748B)),
+          tooltip: tooltip,
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+          onPressed: () {
+            setState(() {
+              if (isActive) {
+                _activeFormats.remove(tooltip);
+              } else {
+                _activeFormats.add(tooltip);
+              }
+            });
+          },
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildVisibleChips() {
+    final chips = <Widget>[];
+    if (_jamesMitchellVisible) {
+      chips.add(_personChip('James Mitchell', 'JM'));
+    }
+    if (_superUserVisible) {
+      chips.add(_personChip('Super User', 'SU'));
+    }
+    if (chips.isEmpty) {
+      chips.add(const Text('Nobody', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF4F46E5))));
+    }
+    return chips;
+  }
+  
+  Widget _personChip(String name, String initials) {
+    return Container(
+      padding: const EdgeInsets.only(right: 8, top: 2, bottom: 2, left: 2),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFC7D2FE)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircleAvatar(
+            radius: 10,
+            backgroundColor: const Color(0xFF8B5CF6),
+            child: Text(initials, style: const TextStyle(fontSize: 8, color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+          const SizedBox(width: 6),
+          Text(name, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF4F46E5))),
+        ],
       ),
     );
   }
@@ -217,64 +292,85 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
   }
 
   void _showEditMembersDialog() {
-    showDialog(
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          title: Row(
-            children: [
-              const Text('Edit Members', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              const SizedBox(width: 8),
-              const Icon(Icons.info_outline, size: 16, color: Color(0xFF94A3B8)),
-              const Spacer(),
-              IconButton(
-                icon: const Icon(Icons.close, size: 20),
-                onPressed: () => Navigator.pop(ctx),
-                padding: EdgeInsets.zero,
-              ),
-            ],
+        builder: (ctx, setSheetState) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          content: Column(
+          padding: const EdgeInsets.only(top: 12, left: 20, right: 20, bottom: 32),
+          child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Client', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF64748B), letterSpacing: 0.5)),
-              const SizedBox(height: 8),
-              _memberCheckboxRow(
-                initials: 'JM',
-                name: 'James Mitchell (You)',
-                value: _jamesMitchellVisible,
-                onChanged: (val) {
-                  setDialogState(() => _jamesMitchellVisible = val ?? true);
-                  setState(() {});
-                },
+              // Drag handle
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE2E8F0),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Edit Members', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 20, color: Color(0xFF64748B)),
+                    onPressed: () => Navigator.pop(ctx),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              const Text('Client', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF94A3B8), letterSpacing: 1.2)),
+              const Divider(color: Color(0xFFF1F5F9)),
+              Opacity(
+                opacity: 0.6,
+                child: _memberCheckboxRow(
+                  initials: 'JM',
+                  name: 'James Mitchell (You)',
+                  value: true, // Locked to true
+                  onChanged: null, // Disabled
+                ),
               ),
               const SizedBox(height: 16),
-              const Text('Yopmails', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF64748B), letterSpacing: 0.5)),
-              const SizedBox(height: 8),
+              const Text('Yopmails', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF94A3B8), letterSpacing: 1.2)),
+              const Divider(color: Color(0xFFF1F5F9)),
               _memberCheckboxRow(
                 initials: 'SU',
                 name: 'Super User',
                 value: _superUserVisible,
                 onChanged: (val) {
-                  setDialogState(() => _superUserVisible = val ?? true);
-                  setState(() {});
+                  setSheetState(() => _superUserVisible = val ?? true);
+                  setState(() {}); // Update underlying screen
                 },
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4F46E5),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: const Text('Save Settings', style: TextStyle(fontWeight: FontWeight.w600)),
+                ),
               ),
             ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(ctx),
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF4F46E5), foregroundColor: Colors.white),
-              child: const Text('Save'),
-            ),
-          ],
         ),
       ),
     );
@@ -284,28 +380,42 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
     required String initials,
     required String name,
     required bool value,
-    required ValueChanged<bool?> onChanged,
+    required ValueChanged<bool?>? onChanged,
   }) {
-    return Row(
-      children: [
-        CircleAvatar(
-          radius: 16,
-          backgroundColor: const Color(0xFF8B5CF6),
-          child: Text(initials, style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold)),
+    return GestureDetector(
+      onTap: onChanged != null ? () => onChanged(!value) : null,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            Container(
+              width: 20,
+              height: 20,
+              decoration: BoxDecoration(
+                color: value ? const Color(0xFF4F46E5) : Colors.white,
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: value ? const Color(0xFF4F46E5) : const Color(0xFFCBD5E1)),
+              ),
+              child: value ? const Icon(Icons.check, size: 14, color: Colors.white) : null,
+            ),
+            const SizedBox(width: 12),
+            CircleAvatar(
+              radius: 14,
+              backgroundColor: const Color(0xFF8B5CF6),
+              child: Text(initials, style: const TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+            const SizedBox(width: 10),
+            Expanded(child: Text(name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF0F172A)))),
+          ],
         ),
-        const SizedBox(width: 12),
-        Expanded(child: Text(name, style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)))),
-        Checkbox(
-          value: value,
-          onChanged: onChanged,
-          activeColor: const Color(0xFF4F46E5),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-        ),
-      ],
+      ),
     );
   }
 
   void _postMessage() {
+    if (!_canPost) return;
+    
     final title = _titleController.text.trim();
     final body = _bodyController.text.trim();
     if (title.isEmpty || body.isEmpty) {

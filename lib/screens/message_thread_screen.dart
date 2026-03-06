@@ -13,11 +13,20 @@ class MessageThreadScreen extends StatefulWidget {
 class _MessageThreadScreenState extends State<MessageThreadScreen> {
   late List<BoardComment> _comments;
   final _replyController = TextEditingController();
+  bool _canReply = false;
 
   @override
   void initState() {
     super.initState();
     _comments = List.from(widget.post.comments);
+    _replyController.addListener(_validateReply);
+  }
+
+  void _validateReply() {
+    final bool hasText = _replyController.text.trim().isNotEmpty;
+    if (_canReply != hasText) {
+      setState(() => _canReply = hasText);
+    }
   }
 
   @override
@@ -96,8 +105,14 @@ class _MessageThreadScreenState extends State<MessageThreadScreen> {
                         ),
                       ),
                       // Post body
-                      Padding(
+                      Container(
+                        margin: const EdgeInsets.all(16),
                         padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
                         child: Text(
                           widget.post.bodyText,
                           style: const TextStyle(fontSize: 14, color: Color(0xFF334155), height: 1.6),
@@ -114,10 +129,22 @@ class _MessageThreadScreenState extends State<MessageThreadScreen> {
                     child: Row(
                       children: [
                         const Icon(Icons.chat_bubble_outline, size: 14, color: Color(0xFF64748B)),
-                        const SizedBox(width: 6),
-                        Text(
-                          '${_comments.length} Comment${_comments.length != 1 ? 's' : ''}',
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Comments',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEEF2FF),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            '${_comments.length}',
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF4F46E5)),
+                          ),
                         ),
                       ],
                     ),
@@ -164,12 +191,13 @@ class _MessageThreadScreenState extends State<MessageThreadScreen> {
                 ),
                 const SizedBox(width: 10),
                 ElevatedButton(
-                  onPressed: _addComment,
+                  onPressed: _canReply ? _addComment : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4F46E5),
-                    foregroundColor: Colors.white,
+                    backgroundColor: _canReply ? const Color(0xFF4F46E5) : const Color(0xFFE2E8F0),
+                    foregroundColor: _canReply ? Colors.white : const Color(0xFF94A3B8),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    elevation: _canReply ? 1 : 0,
                   ),
                   child: const Text('Reply', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                 ),
@@ -182,36 +210,61 @@ class _MessageThreadScreenState extends State<MessageThreadScreen> {
   }
 
   Widget _buildCommentCard(BoardComment comment) {
+    final bool isMe = comment.authorName == 'James Mitchell';
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 1)),
+        ],
       ),
-      padding: const EdgeInsets.all(14),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 14,
-                backgroundColor: const Color(0xFF8B5CF6),
-                child: Text(comment.authorInitials, style: const TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
+          if (isMe)
+            Container(
+              height: 3,
+              decoration: const BoxDecoration(
+                color: Color(0xFF4F46E5),
+                borderRadius: BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10)),
               ),
-              const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(comment.authorName, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0F172A))),
-                  Text(comment.timestamp, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
-                ],
-              ),
-            ],
+            ),
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CircleAvatar(
+                  radius: 14,
+                  backgroundColor: isMe ? const Color(0xFF4F46E5) : const Color(0xFF8B5CF6),
+                  child: Text(comment.authorInitials, style: const TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(comment.authorName, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0F172A))),
+                          if (isMe) ...[
+                            const SizedBox(width: 4),
+                            const Text('(You)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF4F46E5))),
+                          ],
+                          const SizedBox(width: 8),
+                          Text(comment.timestamp, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(comment.bodyText, style: const TextStyle(fontSize: 13, color: Color(0xFF334155), height: 1.5)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 10),
-          Text(comment.bodyText, style: const TextStyle(fontSize: 13, color: Color(0xFF334155), height: 1.5)),
         ],
       ),
     );
