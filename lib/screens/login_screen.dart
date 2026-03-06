@@ -30,6 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoggingIn = false;
   Organization? _organization;
   bool _showSuccess = false;
+  bool _rememberMe = true;
 
   @override
   void initState() {
@@ -58,6 +59,23 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       return;
     }
+
+    setState(() {
+      _isLoggingIn = true;
+    });
+
+    final sessionToken = _rememberMe ? 'mock_token_${DateTime.now().millisecondsSinceEpoch}' : null;
+    final sessionExpiry = _rememberMe ? DateTime.now().add(const Duration(days: 30)) : null;
+
+    final account = SavedAccount(
+      orgCode: widget.workspaceId!,
+      email: _emailController.text,
+      orgName: _organization!.name,
+      sessionToken: sessionToken,
+      sessionExpiry: sessionExpiry,
+    );
+
+    await AuthStorage.saveAccount(account);
 
     setState(() {
       _isLoggingIn = false;
@@ -367,25 +385,55 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        // Forgot Password
-        Align(
-          alignment: Alignment.centerRight,
-          child: GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ForgotPasswordScreen()),
-              );
-            },
-            child: const Text(
-              'Forgot Password?',
-              style: TextStyle(
-                color: Color(0xFF4F46E5),
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
+        // Forgot Password and Remember Me
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: Checkbox(
+                    value: _rememberMe,
+                    onChanged: (value) {
+                      setState(() {
+                        _rememberMe = value ?? false;
+                      });
+                    },
+                    activeColor: const Color(0xFF4F46E5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'Remember me',
+                  style: TextStyle(
+                    color: Color(0xFF475569),
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ForgotPasswordScreen()),
+                );
+              },
+              child: const Text(
+                'Forgot Password?',
+                style: TextStyle(
+                  color: Color(0xFF4F46E5),
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
               ),
             ),
-          ),
+          ],
         ),
         const SizedBox(height: 32),
         SizedBox(

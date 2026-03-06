@@ -4,6 +4,7 @@ import '../services/auth_storage.dart';
 import '../models/organization.dart';
 import 'login_screen.dart';
 import 'account_setup_flow.dart';
+import 'home_shell.dart';
 
 class OrgSelectionScreen extends StatefulWidget {
   const OrgSelectionScreen({super.key});
@@ -41,6 +42,19 @@ class _OrgSelectionScreenState extends State<OrgSelectionScreen> {
   }
 
   void _navigateToLogin(SavedAccount account) {
+    if (account.hasActiveSession) {
+      final org = Organization.fromCode(account.orgCode);
+      if (org != null) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => HomeShell(organization: org),
+          ),
+        );
+        return;
+      }
+    }
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -235,8 +249,8 @@ class _OrgSelectionScreenState extends State<OrgSelectionScreen> {
               Container(
                 width: 8,
                 height: 8,
-                decoration: const BoxDecoration(
-                  color: Colors.green, // Assuming online/active dot
+                decoration: BoxDecoration(
+                  color: account.hasActiveSession ? Colors.green : const Color(0xFFCBD5E1),
                   shape: BoxShape.circle,
                 ),
               ),

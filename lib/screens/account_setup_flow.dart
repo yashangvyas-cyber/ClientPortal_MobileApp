@@ -107,12 +107,14 @@ class _AccountSetupFlowState extends State<AccountSetupFlow> {
 
     if (!mounted) return;
 
-    // Save to local storage
+    // Save to local storage with an active session token
     await AuthStorage.saveAccount(
       SavedAccount(
         orgCode: _verifiedOrg!.code,
         email: _emailController.text,
         orgName: _verifiedOrg!.name,
+        sessionToken: 'mock_token_${DateTime.now().millisecondsSinceEpoch}',
+        sessionExpiry: DateTime.now().add(const Duration(days: 30)),
       ),
     );
 

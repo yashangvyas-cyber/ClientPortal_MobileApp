@@ -5,23 +5,37 @@ class SavedAccount {
   final String orgCode;
   final String email;
   final String? orgName;
+  final String? sessionToken;
+  final DateTime? sessionExpiry;
 
   SavedAccount({
     required this.orgCode,
     required this.email,
     this.orgName,
+    this.sessionToken,
+    this.sessionExpiry,
   });
+
+  bool get hasActiveSession =>
+      sessionToken != null &&
+      (sessionExpiry?.isAfter(DateTime.now()) ?? false);
 
   Map<String, dynamic> toJson() => {
         'orgCode': orgCode,
         'email': email,
         'orgName': orgName,
+        'sessionToken': sessionToken,
+        'sessionExpiry': sessionExpiry?.toIso8601String(),
       };
 
   factory SavedAccount.fromJson(Map<String, dynamic> json) => SavedAccount(
         orgCode: json['orgCode'],
         email: json['email'],
         orgName: json['orgName'],
+        sessionToken: json['sessionToken'],
+        sessionExpiry: json['sessionExpiry'] != null
+            ? DateTime.tryParse(json['sessionExpiry'])
+            : null,
       );
 }
 
