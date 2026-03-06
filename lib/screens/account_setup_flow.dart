@@ -6,7 +6,12 @@ import 'home_shell.dart';
 import 'login_screen.dart';
 
 class AccountSetupFlow extends StatefulWidget {
-  const AccountSetupFlow({super.key});
+  final bool showBackButton;
+
+  const AccountSetupFlow({
+    super.key,
+    this.showBackButton = true,
+  });
 
   @override
   State<AccountSetupFlow> createState() => _AccountSetupFlowState();
@@ -142,9 +147,34 @@ class _AccountSetupFlowState extends State<AccountSetupFlow> {
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildHeader(),
+                  if (_currentStep == 2 || widget.showBackButton) ...[
+                    GestureDetector(
+                    onTap: () {
+                      if (_currentStep == 2 && !_showSuccess) {
+                        setState(() { _currentStep = 1; });
+                      } else {
+                        Navigator.pop(context);
+                      }
+                    },
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Icon(Icons.arrow_back, color: Color(0xFF4F46E5), size: 18),
+                        SizedBox(width: 4),
+                        Text(
+                          'Back',
+                          style: TextStyle(
+                            color: Color(0xFF4F46E5),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   const SizedBox(height: 24),
+                  ],
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 300),
                     child: _showSuccess 
@@ -195,74 +225,6 @@ class _AccountSetupFlowState extends State<AccountSetupFlow> {
     );
   }
 
-  Widget _buildProgressHeader(int step) {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            GestureDetector(
-              onTap: () {
-                if (step == 2) {
-                  setState(() {
-                    _currentStep = 1;
-                  });
-                } else {
-                  Navigator.pop(context);
-                }
-              },
-              child: Row(
-                children: const [
-                  Icon(Icons.arrow_back, color: Color(0xFF4F46E5), size: 18),
-                  SizedBox(width: 4),
-                  Text(
-                    'Back',
-                    style: TextStyle(
-                      color: Color(0xFF4F46E5),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: Container(
-                height: 4,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF4F46E5),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Container(
-                height: 4,
-                decoration: BoxDecoration(
-                  color: step == 2 ? const Color(0xFF4F46E5) : const Color(0xFFE2E8F0),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Text(
-              'Step $step of 2',
-              style: const TextStyle(
-                color: Color(0xFF64748B),
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 32),
-      ],
-    );
-  }
 
   Widget _buildStep1() {
     return Form(
@@ -270,7 +232,8 @@ class _AccountSetupFlowState extends State<AccountSetupFlow> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildProgressHeader(1),
+          _buildHeader(),
+          const SizedBox(height: 32),
           const Text(
             'Continue to Portal',
             style: TextStyle(
@@ -388,7 +351,8 @@ class _AccountSetupFlowState extends State<AccountSetupFlow> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildProgressHeader(2),
+          _buildHeader(),
+          const SizedBox(height: 32),
           // Verified Org Indicator
           if (_verifiedOrg != null)
             Container(
@@ -447,47 +411,7 @@ class _AccountSetupFlowState extends State<AccountSetupFlow> {
                 ],
               ),
             ),
-          const SizedBox(height: 24),
-          // Orange "New Account Detected" notice
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF7ED),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFFFDDB1)),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.info_outline, color: Color(0xFFF97316), size: 20),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text(
-                        'New Account Detected',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFFC2410C),
-                          fontSize: 14,
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'This email hasn\'t been set up yet. Create a password to activate your access.',
-                        style: TextStyle(
-                          color: Color(0xFFC2410C),
-                          fontSize: 12,
-                          height: 1.4,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 32),
           const Text(
             'Set Your Password',
             style: TextStyle(
@@ -498,7 +422,7 @@ class _AccountSetupFlowState extends State<AccountSetupFlow> {
           ),
           const SizedBox(height: 8),
           const Text(
-            'Create a secure password for your account.',
+            'No password found for this email. Create one below to activate your access.',
             style: TextStyle(color: Color(0xFF64748B), height: 1.5),
           ),
           const SizedBox(height: 24),
@@ -575,57 +499,30 @@ class _AccountSetupFlowState extends State<AccountSetupFlow> {
             ),
           ),
           const SizedBox(height: 32),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () {
-                    setState(() {
-                      _currentStep = 1;
-                    });
-                  },
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    side: const BorderSide(color: Color(0xFFE2E8F0)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    'Back',
-                    style: TextStyle(
-                      color: Color(0xFF4F46E5),
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              onPressed: _isProcessing ? null : _handleStep2Submit,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4F46E5),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: _isProcessing ? null : _handleStep2Submit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFEEF2FF),
-                    foregroundColor: const Color(0xFF4F46E5),
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+              child: _isProcessing
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text(
+                      'Activate & Sign In',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     ),
-                  ),
-                  child: _isProcessing
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text(
-                          'Activate & Sign In',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                ),
-              ),
-            ],
+            ),
           ),
         ],
       ),

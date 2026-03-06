@@ -33,7 +33,9 @@ class _OrgSelectionScreenState extends State<OrgSelectionScreen> {
     if (_savedAccounts.isEmpty && mounted) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const AccountSetupFlow()),
+        MaterialPageRoute(
+          builder: (context) => const AccountSetupFlow(showBackButton: false),
+        ),
       );
     }
   }
