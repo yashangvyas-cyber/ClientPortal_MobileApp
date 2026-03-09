@@ -33,8 +33,8 @@ class _AccountSetupFlowState extends State<AccountSetupFlow> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isProcessing = false;
-  Organization? _verifiedOrg;
   bool _showSuccess = false;
+  Organization? _verifiedOrg;
 
   @override
   void dispose() {
@@ -118,12 +118,18 @@ class _AccountSetupFlowState extends State<AccountSetupFlow> {
       ),
     );
 
-    setState(() {
-      _isProcessing = false;
-      _showSuccess = true;
-    });
-
-    // Success SnackBar removed as we now show a dedicated success state
+    if (mounted) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (context) => HomeShell(
+            organization: _verifiedOrg!,
+            showWelcome: true, // Navigate directly and show welcome
+          ),
+        ),
+        (route) => false,
+      );
+    }
   }
 
   @override
@@ -179,9 +185,7 @@ class _AccountSetupFlowState extends State<AccountSetupFlow> {
                   ],
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 300),
-                    child: _showSuccess 
-                        ? _buildSuccessState() 
-                        : (_currentStep == 1 ? _buildStep1() : _buildStep2()),
+                    child: _currentStep == 1 ? _buildStep1() : _buildStep2(),
                   ),
                 ],
               ),
@@ -531,63 +535,5 @@ class _AccountSetupFlowState extends State<AccountSetupFlow> {
     );
   }
 
-  Widget _buildSuccessState() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 80,
-          height: 80,
-          decoration: const BoxDecoration(
-            color: Color(0xFFF0FDF4),
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(Icons.check_circle_outline, size: 40, color: Color(0xFF22C55E)),
-        ),
-        const SizedBox(height: 24),
-        const Text(
-          'Account Activated!',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF0F172A),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Your account for ${_verifiedOrg?.name} is ready.',
-          textAlign: TextAlign.center,
-          style: const TextStyle(color: Color(0xFF64748B), height: 1.5),
-        ),
-        const SizedBox(height: 32),
-        SizedBox(
-          width: double.infinity,
-          height: 48,
-          child: ElevatedButton(
-            onPressed: () {
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => HomeShell(organization: _verifiedOrg!),
-                ),
-                (route) => false,
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4F46E5),
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: const Text(
-              'Enter Portal',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+
 }

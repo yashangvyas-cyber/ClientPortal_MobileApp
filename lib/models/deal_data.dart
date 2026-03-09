@@ -1,8 +1,13 @@
 class ProposalData {
   final String title;
   final String status;
+  final String content;
 
-  ProposalData({required this.title, required this.status});
+  ProposalData({
+    required this.title,
+    required this.status,
+    this.content = '',
+  });
 }
 
 class PaymentRecord {

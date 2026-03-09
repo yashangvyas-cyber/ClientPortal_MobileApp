@@ -8,7 +8,12 @@ import 'settings_screen.dart';
 
 class HomeShell extends StatefulWidget {
   final Organization organization;
-  const HomeShell({super.key, required this.organization});
+  final bool showWelcome;
+  const HomeShell({
+    super.key, 
+    required this.organization,
+    this.showWelcome = false,
+  });
 
   @override
   State<HomeShell> createState() => _HomeShellState();
@@ -24,6 +29,20 @@ class _HomeShellState extends State<HomeShell> {
   void initState() {
     super.initState();
     _currentUnit = widget.organization.businessUnits.first;
+    
+    if (widget.showWelcome) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Welcome back to ${widget.organization.name}!'),
+            backgroundColor: const Color(0xFF4F46E5),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+      });
+    }
   }
 
   void _openSettings() {

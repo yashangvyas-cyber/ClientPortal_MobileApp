@@ -30,15 +30,21 @@ class _OrgSelectionScreenState extends State<OrgSelectionScreen> {
       _isLoading = false;
     });
 
-    // If no accounts, redirect to setup directly
+    // If no accounts, we no longer redirect directly. 
+    // We stay on this screen to show the "Welcome to CollabCRM" state.
+    /*
     if (_savedAccounts.isEmpty && mounted) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => const AccountSetupFlow(showBackButton: false),
+          builder: (context) => const LoginScreen(
+            showBackButton: false,
+            isAddingNew: true,
+          ),
         ),
       );
     }
+    */
   }
 
   void _navigateToLogin(SavedAccount account) {
@@ -61,6 +67,7 @@ class _OrgSelectionScreenState extends State<OrgSelectionScreen> {
         builder: (context) => LoginScreen(
           workspaceId: account.orgCode,
           prefilledEmail: account.email,
+          isAddingNew: false,
         ),
       ),
     );
@@ -74,10 +81,6 @@ class _OrgSelectionScreenState extends State<OrgSelectionScreen> {
       );
     }
 
-    // Fallback if somehow it doesn't redirect fast enough
-    if (_savedAccounts.isEmpty) {
-      return const Scaffold();
-    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
@@ -100,21 +103,28 @@ class _OrgSelectionScreenState extends State<OrgSelectionScreen> {
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildHeader(),
                   const SizedBox(height: 32),
-                  const Text(
-                    'Welcome Back 👋',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF0F172A),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      _savedAccounts.isEmpty ? 'Welcome to CollabCRM' : 'Your Organisations',
+                      style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0F172A),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    'Choose an organization to sign in to',
-                    style: TextStyle(
+                  Text(
+                    _savedAccounts.isEmpty
+                        ? 'Get started by connecting with organisation'
+                        : 'Select an organisation to continue',
+                    style: const TextStyle(
                       fontSize: 14,
                       color: Color(0xFF64748B),
                     ),
@@ -123,8 +133,6 @@ class _OrgSelectionScreenState extends State<OrgSelectionScreen> {
                   ..._savedAccounts.map((account) => _buildOrgCard(account)),
                   const SizedBox(height: 16),
                   _buildAddAnotherButton(),
-                  const SizedBox(height: 32),
-                  _buildFirstTimeLink(),
                 ],
               ),
             ),
@@ -272,7 +280,9 @@ class _OrgSelectionScreenState extends State<OrgSelectionScreen> {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const AccountSetupFlow()),
+          MaterialPageRoute(
+            builder: (context) => const LoginScreen(isAddingNew: true),
+          ),
         );
       },
       borderRadius: BorderRadius.circular(16),
@@ -289,12 +299,12 @@ class _OrgSelectionScreenState extends State<OrgSelectionScreen> {
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Icon(Icons.add, color: Color(0xFF64748B), size: 20),
+          children: [
+            const Icon(Icons.add, color: Color(0xFF64748B), size: 20),
             SizedBox(width: 8),
             Text(
-              'Add Another Organization',
-              style: TextStyle(
+              _savedAccounts.isEmpty ? 'Add Organisation' : 'Add Another Organization',
+              style: const TextStyle(
                 color: Color(0xFF64748B),
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
@@ -303,33 +313,6 @@ class _OrgSelectionScreenState extends State<OrgSelectionScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildFirstTimeLink() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Text(
-          'First time? ',
-          style: TextStyle(color: Color(0xFF64748B)),
-        ),
-        GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const AccountSetupFlow()),
-            );
-          },
-          child: const Text(
-            'Set up your account',
-            style: TextStyle(
-              color: Color(0xFF4F46E5),
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

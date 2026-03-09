@@ -4,17 +4,20 @@ import '../models/organization.dart';
 import '../services/auth_storage.dart';
 import 'home_shell.dart';
 import 'forgot_password_screen.dart';
+import 'password_setup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   final String? workspaceId;
   final String? prefilledEmail;
-  final bool isJoining;
+  final bool isAddingNew;
+  final bool showBackButton;
   
   const LoginScreen({
     super.key, 
     this.workspaceId, 
     this.prefilledEmail,
-    this.isJoining = false
+    this.isAddingNew = false,
+    this.showBackButton = true,
   });
 
   @override
@@ -23,13 +26,13 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _orgCodeController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   
   bool _obscurePassword = true;
   bool _isLoggingIn = false;
   Organization? _organization;
-  bool _showSuccess = false;
   bool _rememberMe = true;
 
   @override
@@ -45,6 +48,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
+    _orgCodeController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -53,11 +57,22 @@ class _LoginScreenState extends State<LoginScreen> {
   void _handleSignIn() async {
     if (!_formKey.currentState!.validate()) return;
     
+    // If we don't have a pre-selected organization, try to load it from the code
     if (_organization == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Organization context missing.')),
-      );
-      return;
+      final code = _orgCodeController.text.trim();
+      final org = Organization.fromCode(code);
+      if (org == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Organization not found. Try "yopmail" or "bluewhale".'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+      setState(() {
+        _organization = org;
+      });
     }
 
     setState(() {
@@ -68,7 +83,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final sessionExpiry = _rememberMe ? DateTime.now().add(const Duration(days: 30)) : null;
 
     final account = SavedAccount(
-      orgCode: widget.workspaceId!,
+      orgCode: _organization!.code,
       email: _emailController.text,
       orgName: _organization!.name,
       sessionToken: sessionToken,
@@ -79,8 +94,20 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() {
       _isLoggingIn = false;
-      _showSuccess = true;
     });
+
+    if (mounted) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (context) => HomeShell(
+            organization: _organization!,
+            showWelcome: true,
+          ),
+        ),
+        (route) => false,
+      );
+    }
   }
 
   @override
@@ -107,31 +134,30 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.pop(context);
-                    },
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: const [
-                        Icon(Icons.arrow_back, color: Color(0xFF4F46E5), size: 18),
-                        SizedBox(width: 4),
-                        Text(
-                          'Back',
-                          style: TextStyle(
-                            color: Color(0xFF4F46E5),
-                            fontWeight: FontWeight.w600,
+                  if (widget.showBackButton)
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pop(context);
+                      },
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Icon(Icons.arrow_back, color: Color(0xFF4F46E5), size: 18),
+                          SizedBox(width: 4),
+                          Text(
+                            'Back',
+                            style: TextStyle(
+                              color: Color(0xFF4F46E5),
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 24),
+                  if (widget.showBackButton) const SizedBox(height: 24),
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 300),
-                    child: _showSuccess 
-                        ? _buildSuccessState() 
-                        : _buildMainContent(),
+                    child: _buildMainContent(),
                   ),
                 ],
               ),
@@ -209,49 +235,86 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildOrgChip() {
-    if (_organization == null) return const SizedBox.shrink();
-    
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFEEF2FF), // Indigo tinted
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFC7D2FE)),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color: const Color(0xFF4F46E5),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Center(
-              child: Text(
-                _organization!.name.substring(0, 2).toUpperCase(),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
+  Widget _buildOrgInputOrChip() {
+    if (_organization != null) {
+      return Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFFEEF2FF), // Indigo tinted
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFC7D2FE)),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: const Color(0xFF4F46E5),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Center(
+                child: Text(
+                  _organization!.name.substring(0, 2).toUpperCase(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
                 ),
               ),
             ),
+            const SizedBox(width: 12),
+            Text(
+              _organization!.name,
+              style: const TextStyle(
+                color: Color(0xFF4F46E5),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Icon(Icons.check, color: Color(0xFF4F46E5), size: 16),
+          ],
+        ),
+      );
+    }
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Organization Code *',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF475569),
           ),
-          const SizedBox(width: 12),
-          Text(
-            _organization!.name,
-            style: const TextStyle(
-              color: Color(0xFF4F46E5),
-              fontWeight: FontWeight.w600,
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: _orgCodeController,
+          validator: (value) => value == null || value.isEmpty
+              ? 'Please enter an organization code'
+              : null,
+          decoration: InputDecoration(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 12,
+            ),
+            hintText: 'e.g. yopmail',
+            prefixIcon: const Icon(Icons.business_outlined, color: Color(0xFF94A3B8)),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
             ),
           ),
-          const SizedBox(width: 8),
-          const Icon(Icons.check, color: Color(0xFF4F46E5), size: 16),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -259,28 +322,33 @@ class _LoginScreenState extends State<LoginScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildOrgChip(),
-        const SizedBox(height: 24),
-        Row(
-          children: [
-            const Text(
-              'Welcome back ',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF0F172A),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Row(
+            children: [
+              Text(
+                widget.isAddingNew ? 'Add Organisation' : 'Welcome back ',
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF0F172A),
+                ),
               ),
-            ),
-            const Text(
-              '👋',
-              style: TextStyle(fontSize: 28),
-            ),
-          ],
+              if (!widget.isAddingNew)
+                const Text(
+                  '👋',
+                  style: TextStyle(fontSize: 28),
+                ),
+            ],
+          ),
         ),
         const SizedBox(height: 8),
-        const Text(
-          'Sign in to continue to your portal',
-          style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+        Text(
+          widget.isAddingNew 
+              ? 'Enter your details to connect a new organisation' 
+              : 'Sign in to continue to your portal',
+          style: const TextStyle(fontSize: 14, color: Color(0xFF64748B)),
         ),
         const SizedBox(height: 32),
         Form(
@@ -288,6 +356,8 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              _buildOrgInputOrChip(),
+              const SizedBox(height: 20),
               const Text(
                 'Email Address *',
                 style: TextStyle(
@@ -463,64 +533,33 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
           ),
         ),
-      ],
-    );
-  }
-
-  Widget _buildSuccessState() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Container(
-          width: 80,
-          height: 80,
-          decoration: const BoxDecoration(
-            color: Color(0xFFF0FDF4),
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(Icons.check_circle_outline, size: 40, color: Color(0xFF22C55E)),
-        ),
-        const SizedBox(height: 24),
-        const Text(
-          'Signed In!',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF0F172A),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Welcome back to ${_organization?.name}.',
-          textAlign: TextAlign.center,
-          style: const TextStyle(color: Color(0xFF64748B), height: 1.5),
-        ),
         const SizedBox(height: 32),
-        SizedBox(
-          width: double.infinity,
-          height: 48,
-          child: ElevatedButton(
-            onPressed: () {
-              Navigator.pushAndRemoveUntil(
+        Center(
+          child: GestureDetector(
+            onTap: () {
+              Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => HomeShell(organization: _organization!),
+                  builder: (context) => PasswordSetupScreen(
+                    inviteCode: _orgCodeController.text.isNotEmpty ? _orgCodeController.text : null,
+                  ),
                 ),
-                (route) => false,
               );
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4F46E5),
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+            child: RichText(
+              text: const TextSpan(
+                style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+                children: [
+                  TextSpan(text: 'New user? '),
+                  TextSpan(
+                    text: 'Set up your password',
+                    style: TextStyle(
+                      color: Color(0xFF4F46E5),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
-            ),
-            child: const Text(
-              'Enter Portal',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ),
         ),

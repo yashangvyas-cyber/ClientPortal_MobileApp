@@ -32,6 +32,38 @@ class _DealDetailsScreenState extends State<DealDetailsScreen> {
   }
 
   DealData _getDealData(String dealId) {
+    const mockProposalContent1 = '''
+# PROPOSAL FOR IT SUPPORT SERVICES
+
+## 1. Executive Summary
+Apex Consulting Group requires a robust IT infrastructure to support its growing operations. This proposal outlines a comprehensive support plan covering 24/7 monitoring, help desk services, and strategic IT consulting.
+
+## 2. Scope of Services
+- **Network Management**: Monitoring, maintenance, and optimization of office networks.
+- **Cybersecurity**: Real-time threat detection and remediation.
+- **Cloud Infrastructure**: AWS/Azure environment management.
+- **Support**: Priority help desk for all employees.
+
+## 3. Financials
+- Monthly Retainer: \$5,000
+- Setup Fee: \$1,500 (one-time)
+''';
+
+    const mockProposalContent2 = '''
+# UPDATED SCOPE - APRIL 2026
+
+## Overview
+Following our quarterly review, we propose expanding the scope to include dedicated DevOps support for the new client portal project.
+
+## New Additions
+- **Continuous Integration**: Implementation of GitHub Actions workflows.
+- **Performance Tuning**: Database optimization for better load times.
+- **Staging Environments**: Management of temporary test environments.
+
+## Adjusted Financials
+- New Monthly Total: \$6,500
+''';
+
     final dealMap = {
       '1': DealData(
         dealType: 'Hourly',
@@ -42,8 +74,13 @@ class _DealDetailsScreenState extends State<DealDetailsScreen> {
           ProposalData(
             title: 'Proposal #1 - Initial Quote',
             status: 'Accepted',
+            content: mockProposalContent1,
           ),
-          ProposalData(title: 'Proposal #2 - Updated Scope', status: 'Pending'),
+          ProposalData(
+            title: 'Proposal #2 - Updated Scope',
+            status: 'Pending',
+            content: mockProposalContent2,
+          ),
         ],
         invoices: [
           InvoiceData(
@@ -62,7 +99,11 @@ class _DealDetailsScreenState extends State<DealDetailsScreen> {
         projectName: 'IT Staff Augmentation – Apex Consulting Group',
         projectStatus: 'In Progress',
         proposals: [
-          ProposalData(title: 'Resource Pool Proposal', status: 'Accepted'),
+          ProposalData(
+            title: 'Resource Pool Proposal',
+            status: 'Accepted',
+            content: 'Standard staffing agreement for Phase 2.'
+          ),
         ],
         invoices: [
           InvoiceData(
@@ -84,6 +125,7 @@ class _DealDetailsScreenState extends State<DealDetailsScreen> {
           ProposalData(
             title: 'Infrastructure Setup Proposal',
             status: 'Pending',
+            content: 'Detailed architecture plan for the 2026 hardware refresh.'
           ),
         ],
         invoices: [
@@ -108,6 +150,139 @@ class _DealDetailsScreenState extends State<DealDetailsScreen> {
     };
 
     return dealMap[dealId] ?? dealMap['1']!;
+  }
+
+  void _showProposalDocument(ProposalData proposal) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        height: MediaQuery.of(context).size.height * 0.85,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(28),
+            topRight: Radius.circular(28),
+          ),
+        ),
+        child: Column(
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 44,
+              height: 4,
+              decoration: BoxDecoration(
+                color: const Color(0xFFCBD5E1),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          proposal.title,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            _buildStatusBadge(proposal.status, Colors.orange),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'Document Preview',
+                              style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    icon: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFF1F5F9),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.close, size: 20, color: Color(0xFF64748B)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Divider(height: 1, color: Color(0xFFE2E8F0)),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFF1F5F9)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withAlpha(5),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        proposal.content.isEmpty 
+                            ? "No document content available for this proposal."
+                            : proposal.content,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          height: 1.6,
+                          color: Color(0xFF334155),
+                          fontFamily: 'monospace', // Gives a document feel
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                  ],
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4F46E5),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('Close Preview', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -456,38 +631,57 @@ class _DealDetailsScreenState extends State<DealDetailsScreen> {
   Widget _buildProposalCard(ProposalData proposal) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF8FAFC),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  proposal.title,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF0F172A),
-                  ),
+      child: InkWell(
+        onTap: () => _showProposalDocument(proposal),
+        borderRadius: BorderRadius.circular(8),
+        highlightColor: const Color(0xFFEEF2FF),
+        splashColor: const Color(0xFFC7D2FE).withOpacity(0.3),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.transparent, // Set to transparent so InkWell background shows through
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      proposal.title,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Status: ${proposal.status}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'Status: ${proposal.status}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF64748B),
+              ),
+              Row(
+                children: [
+                  _buildStatusBadge(proposal.status, Colors.orange),
+                  const SizedBox(width: 8),
+                  const Icon(
+                    Icons.chevron_right,
+                    color: Color(0xFF94A3B8),
+                    size: 18,
                   ),
-                ),
-              ],
-            ),
-            _buildStatusBadge(proposal.status, Colors.orange),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -509,71 +703,85 @@ class _DealDetailsScreenState extends State<DealDetailsScreen> {
           );
         },
         borderRadius: BorderRadius.circular(8),
+        highlightColor: const Color(0xFFEEF2FF),
+        splashColor: const Color(0xFFC7D2FE).withOpacity(0.3),
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: const Color(0xFFF8FAFC),
+            color: Colors.transparent, // Set to transparent so InkWell background shows through
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: const Color(0xFFE2E8F0)),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                   Expanded(
-                     child: Text(
-                       inv.invoiceId,
-                       style: const TextStyle(
-                         fontSize: 13,
-                         fontWeight: FontWeight.w600,
-                         color: Color(0xFF0F172A),
-                       ),
-                     ),
-                   ),
-                  _buildStatusBadge(inv.status, inv.status.toLowerCase().contains("paid") ? Colors.green : Colors.red),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                inv.title,
-                style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Created: ${inv.createdDate}',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Color(0xFF94A3B8),
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Due: ${inv.dueDate}',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Color(0xFF64748B),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Text(
-                    inv.amount,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF0F172A),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                         Expanded(
+                           child: Text(
+                             inv.invoiceId,
+                             style: const TextStyle(
+                               fontSize: 13,
+                               fontWeight: FontWeight.w600,
+                               color: Color(0xFF0F172A),
+                             ),
+                           ),
+                         ),
+                        _buildStatusBadge(inv.status, inv.status.toLowerCase().contains("paid") ? Colors.green : Colors.red),
+                      ],
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    Text(
+                      inv.title,
+                      style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Created: ${inv.createdDate}',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF94A3B8),
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Due: ${inv.dueDate}',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF64748B),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          inv.amount,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(
+                Icons.chevron_right,
+                color: Color(0xFF94A3B8),
+                size: 18,
               ),
             ],
           ),

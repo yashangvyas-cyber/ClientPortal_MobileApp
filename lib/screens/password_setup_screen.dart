@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'login_screen.dart';
+import 'home_shell.dart';
+import '../models/organization.dart';
+import '../services/auth_storage.dart';
 
 class PasswordSetupScreen extends StatefulWidget {
   final String? inviteCode;
@@ -64,20 +67,53 @@ class _PasswordSetupScreenState extends State<PasswordSetupScreen> {
       _isSaving = true;
     });
 
-    // Simulate account activation
-    await Future.delayed(const Duration(seconds: 2));
+    // Simulate network delay
+    await Future.delayed(const Duration(seconds: 1));
+
+    // Mocking account check: if the email does not contain "new", we consider it as already having an account
+    if (!_emailController.text.toLowerCase().contains('new')) {
+      setState(() {
+        _isSaving = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('This account already has a password. Please sign in instead.'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 4),
+          ),
+        );
+      }
+      return;
+    }
+
+    // Simulate successful account activation
+    await Future.delayed(const Duration(seconds: 1));
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Account activated successfully!'),
-          backgroundColor: Colors.green,
+      final organization = Organization.fromCode(_organizationCodeController.text) ?? Organization.yopmail();
+
+      // Save to local storage for persistence
+      await AuthStorage.saveAccount(
+        SavedAccount(
+          orgCode: organization.code,
+          email: _emailController.text,
+          orgName: organization.name,
+          sessionToken: 'mock_token_${DateTime.now().millisecondsSinceEpoch}',
+          sessionExpiry: DateTime.now().add(const Duration(days: 30)),
         ),
       );
 
+      if (!mounted) return;
+
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => const LoginScreen(workspaceId: 'orion-tech-1')),
+        MaterialPageRoute(
+          builder: (context) => HomeShell(
+            organization: organization,
+            showWelcome: true, // Show welcome toast on Deals screen
+          ),
+        ),
         (route) => false,
       );
     }
@@ -258,6 +294,29 @@ class _PasswordSetupScreenState extends State<PasswordSetupScreen> {
                     'Password must contain at least 8 characters, one number, and one special character.',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8), height: 1.4),
+                  ),
+                ),
+                const SizedBox(height: 40),
+                Center(
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.pop(context);
+                    },
+                    child: RichText(
+                      text: const TextSpan(
+                        style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+                        children: [
+                          TextSpan(text: 'Already have a password? '),
+                          TextSpan(
+                            text: 'Sign in',
+                            style: TextStyle(
+                              color: Color(0xFF4F46E5),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ],
