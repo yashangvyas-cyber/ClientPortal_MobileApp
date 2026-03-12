@@ -4,7 +4,6 @@ import '../models/organization.dart';
 import '../services/auth_storage.dart';
 import 'home_shell.dart';
 import 'forgot_password_screen.dart';
-import 'password_setup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   final String? workspaceId;
@@ -531,36 +530,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     'Sign In',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
-          ),
-        ),
-        const SizedBox(height: 32),
-        Center(
-          child: GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => PasswordSetupScreen(
-                    inviteCode: _orgCodeController.text.isNotEmpty ? _orgCodeController.text : null,
-                  ),
-                ),
-              );
-            },
-            child: RichText(
-              text: const TextSpan(
-                style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
-                children: [
-                  TextSpan(text: 'New user? '),
-                  TextSpan(
-                    text: 'Set up your password',
-                    style: TextStyle(
-                      color: Color(0xFF4F46E5),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ),
         ),
       ],

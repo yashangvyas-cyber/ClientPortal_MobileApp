@@ -1,9 +1,20 @@
 import 'package:flutter/material.dart';
 import '../models/message_data.dart';
 
+// ── Reaction helpers ──────────────────────────────────────────────────────────
+const _kEmojiOptions = ['👍', '❤️', '🔥', '✅', '😊', '🙌'];
+
+class _MsgReactionState {
+  final Map<String, int> counts;
+  final Set<String> myReactions;
+  _MsgReactionState({Map<String, int>? counts, Set<String>? myReactions})
+      : counts = counts ?? {},
+        myReactions = myReactions ?? {};
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 class GroupChatTab extends StatefulWidget {
   final MessageThread thread;
-
   const GroupChatTab({super.key, required this.thread});
 
   @override
@@ -15,17 +26,15 @@ class _GroupChatTabState extends State<GroupChatTab> {
   final _inputController = TextEditingController();
   final _scrollController = ScrollController();
   bool _canSend = false;
+  final Map<String, _MsgReactionState> _reactions = {};
 
   @override
   void initState() {
     super.initState();
     _messages = List<GroupMessage>.from(mockGroupMessages).reversed.toList();
-    
     _inputController.addListener(() {
       final hasText = _inputController.text.trim().isNotEmpty;
-      if (hasText != _canSend) {
-        setState(() => _canSend = hasText);
-      }
+      if (hasText != _canSend) setState(() => _canSend = hasText);
     });
   }
 
@@ -48,13 +57,9 @@ class _GroupChatTabState extends State<GroupChatTab> {
             color: Colors.white,
             child: Row(
               children: [
-                // Project type badge
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEEF2FF),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
+                  decoration: BoxDecoration(color: const Color(0xFFEEF2FF), borderRadius: BorderRadius.circular(4)),
                   child: const Text('IT', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF4F46E5))),
                 ),
                 const SizedBox(width: 12),
@@ -68,29 +73,19 @@ class _GroupChatTabState extends State<GroupChatTab> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                // Stacked avatars + member count
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text('${_messages.length + 1} Members', style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
                     const SizedBox(height: 4),
                     SizedBox(
-                      width: 56, // For 3 stacked avatars
+                      width: 56,
                       height: 24,
                       child: Stack(
-                        children: [
-                          Positioned(
-                            right: 0,
-                            child: CircleAvatar(radius: 12, backgroundColor: Colors.amber, child: Text('JD', style: TextStyle(fontSize: 8, color: Colors.white))),
-                          ),
-                          Positioned(
-                            right: 14,
-                            child: CircleAvatar(radius: 12, backgroundColor: Colors.teal, child: Text('SU', style: TextStyle(fontSize: 8, color: Colors.white))),
-                          ),
-                          Positioned(
-                            right: 28,
-                            child: CircleAvatar(radius: 12, backgroundColor: const Color(0xFF8B5CF6), child: const Text('JM', style: TextStyle(fontSize: 8, color: Colors.white))),
-                          ),
+                        children: const [
+                          Positioned(right: 0, child: CircleAvatar(radius: 12, backgroundColor: Colors.amber, child: Text('JD', style: TextStyle(fontSize: 8, color: Colors.white)))),
+                          Positioned(right: 14, child: CircleAvatar(radius: 12, backgroundColor: Colors.teal, child: Text('SU', style: TextStyle(fontSize: 8, color: Colors.white)))),
+                          Positioned(right: 28, child: CircleAvatar(radius: 12, backgroundColor: Color(0xFF8B5CF6), child: Text('JM', style: TextStyle(fontSize: 8, color: Colors.white)))),
                         ],
                       ),
                     ),
@@ -109,21 +104,16 @@ class _GroupChatTabState extends State<GroupChatTab> {
                     child: ListView.builder(
                       controller: _scrollController,
                       reverse: true,
-                      shrinkWrap: true, // Forces items to bottom if they don't fill screen
+                      shrinkWrap: true,
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      itemCount: _messages.length + 1, // +1 for date divider
+                      itemCount: _messages.length + 1,
                       itemBuilder: (context, index) {
                         if (index == _messages.length) return _buildDateDivider('Today');
-                        
                         final msg = _messages[index];
-                        
-                        // In reversed view, next index is "older", previous index is "newer"
-                        final bool isFirstInGroup = index == _messages.length - 1 || 
-                                                    _messages[index + 1].authorInitials != msg.authorInitials;
-                                                    
-                        final bool isLastInGroup = index == 0 || 
-                                                   _messages[index - 1].authorInitials != msg.authorInitials;
-
+                        final bool isFirstInGroup = index == _messages.length - 1 ||
+                            _messages[index + 1].authorInitials != msg.authorInitials;
+                        final bool isLastInGroup =
+                            index == 0 || _messages[index - 1].authorInitials != msg.authorInitials;
                         return _buildMessageBubble(msg, isFirstInGroup, isLastInGroup);
                       },
                     ),
@@ -139,10 +129,7 @@ class _GroupChatTabState extends State<GroupChatTab> {
             ),
             child: Row(
               children: [
-                IconButton(
-                  icon: const Icon(Icons.sentiment_satisfied_alt_outlined, color: Color(0xFF94A3B8)),
-                  onPressed: () {},
-                ),
+                IconButton(icon: const Icon(Icons.sentiment_satisfied_alt_outlined, color: Color(0xFF94A3B8)), onPressed: () {}),
                 Expanded(
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -166,10 +153,7 @@ class _GroupChatTabState extends State<GroupChatTab> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                IconButton(
-                  icon: const Icon(Icons.attach_file, color: Color(0xFF94A3B8)),
-                  onPressed: () {},
-                ),
+                IconButton(icon: const Icon(Icons.attach_file, color: Color(0xFF94A3B8)), onPressed: () {}),
                 const SizedBox(width: 4),
                 GestureDetector(
                   onTap: _canSend ? _sendMessage : null,
@@ -203,30 +187,16 @@ class _GroupChatTabState extends State<GroupChatTab> {
               Container(
                 width: 80,
                 height: 80,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFFFFBEB),
-                  shape: BoxShape.circle,
-                ),
+                decoration: const BoxDecoration(color: Color(0xFFFFFBEB), shape: BoxShape.circle),
                 child: const Icon(Icons.chat_bubble_outline, size: 40, color: Color(0xFFF59E0B)),
               ),
               const SizedBox(height: 20),
               const Text('No conversations yet.', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
               const SizedBox(height: 8),
               const Text(
-                'Kickstart the project collaboration.\nShare updates, ask questions, or just say hello to the team.',
+                'Kickstart the project collaboration.\nShare updates, ask questions, or just say hello.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.5),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton.icon(
-                onPressed: () => _inputController.text = '',
-                icon: const Icon(Icons.bolt, size: 16),
-                label: const Text('Start Discussion'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF4F46E5),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
               ),
             ],
           ),
@@ -253,74 +223,165 @@ class _GroupChatTabState extends State<GroupChatTab> {
 
   Widget _buildMessageBubble(GroupMessage msg, bool isFirstInGroup, bool isLastInGroup) {
     final isMe = msg.isMe;
+    final state = _reactions.putIfAbsent(msg.id, () => _MsgReactionState());
+    final hasReactions = state.counts.isNotEmpty;
+
     return Padding(
       padding: EdgeInsets.only(bottom: isLastInGroup ? 12.0 : 4.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-        children: [
-          if (!isMe) ...[
-            if (isLastInGroup)
-              CircleAvatar(
-                radius: 14,
-                backgroundColor: const Color(0xFF64748B),
-                child: Text(msg.authorInitials, style: const TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
-              )
-            else
-               const SizedBox(width: 28), // placeholder 
-            const SizedBox(width: 8),
-          ],
-          Flexible(
-            child: Column(
-              crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-              children: [
-                if (!isMe && isFirstInGroup)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 4, left: 4),
-                    child: Text(msg.authorName, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                  ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: isMe ? const Color(0xFF4F46E5) : Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: const Radius.circular(16),
-                      topRight: const Radius.circular(16),
-                      bottomLeft: Radius.circular(isMe || isLastInGroup ? 16 : 4),
-                      bottomRight: Radius.circular(!isMe || isLastInGroup ? 16 : 4),
+      child: GestureDetector(
+        onLongPress: () => _showEmojiPicker(msg.id),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+          children: [
+            if (!isMe) ...[
+              if (isLastInGroup)
+                CircleAvatar(
+                  radius: 14,
+                  backgroundColor: const Color(0xFF64748B),
+                  child: Text(msg.authorInitials, style: const TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
+                )
+              else
+                const SizedBox(width: 28),
+              const SizedBox(width: 8),
+            ],
+            Flexible(
+              child: Column(
+                crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                children: [
+                  if (!isMe && isFirstInGroup)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4, left: 4),
+                      child: Text(msg.authorName, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
                     ),
-                    border: isMe ? null : Border.all(color: const Color(0xFFE2E8F0)),
-                    boxShadow: isMe 
-                        ? [BoxShadow(color: const Color(0xFF4F46E5).withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 4))] 
-                        : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4, offset: const Offset(0, 2))],
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: isMe ? const Color(0xFF4F46E5) : Colors.white,
+                      borderRadius: BorderRadius.only(
+                        topLeft: const Radius.circular(16),
+                        topRight: const Radius.circular(16),
+                        bottomLeft: Radius.circular(isMe || isLastInGroup ? 16 : 4),
+                        bottomRight: Radius.circular(!isMe || isLastInGroup ? 16 : 4),
+                      ),
+                      border: isMe ? null : Border.all(color: const Color(0xFFE2E8F0)),
+                      boxShadow: isMe
+                          ? [BoxShadow(color: const Color(0xFF4F46E5).withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 4))]
+                          : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4, offset: const Offset(0, 2))],
+                    ),
+                    child: Text(
+                      msg.bodyText,
+                      style: TextStyle(fontSize: 14, color: isMe ? Colors.white : const Color(0xFF1E293B), height: 1.4),
+                    ),
                   ),
-                  child: Text(
-                    msg.bodyText,
-                    style: TextStyle(fontSize: 14, color: isMe ? Colors.white : const Color(0xFF1E293B), height: 1.4),
-                  ),
-                ),
-                if (isLastInGroup)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4, left: 4, right: 4),
-                    child: Text(msg.timestamp, style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
-                  ),
-              ],
+                  // Reaction pills
+                  if (hasReactions)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Wrap(
+                        spacing: 4,
+                        children: state.counts.entries.map((e) {
+                          final isOwn = state.myReactions.contains(e.key);
+                          return GestureDetector(
+                            onTap: () => _toggleReaction(msg.id, e.key),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: isOwn ? const Color(0xFFEEF2FF) : Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: isOwn ? const Color(0xFF4F46E5) : const Color(0xFFE2E8F0),
+                                  width: isOwn ? 1.5 : 1,
+                                ),
+                              ),
+                              child: Text('${e.key} ${e.value}', style: TextStyle(fontSize: 12, color: isOwn ? const Color(0xFF4F46E5) : const Color(0xFF475569))),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  if (isLastInGroup)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4, left: 4, right: 4),
+                      child: Text(msg.timestamp, style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
+                    ),
+                ],
+              ),
             ),
-          ),
-          if (isMe) ...[
-            const SizedBox(width: 8),
-            if (isLastInGroup)
-              const CircleAvatar(
-                radius: 14,
-                backgroundColor: Color(0xFF8B5CF6),
-                child: Text('JM', style: TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
-              )
-            else
-              const SizedBox(width: 28), // Placeholder
+            if (isMe) ...[
+              const SizedBox(width: 8),
+              if (isLastInGroup)
+                const CircleAvatar(
+                  radius: 14,
+                  backgroundColor: Color(0xFF8B5CF6),
+                  child: Text('JM', style: TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
+                )
+              else
+                const SizedBox(width: 28),
+            ],
           ],
-        ],
+        ),
       ),
     );
+  }
+
+  void _showEmojiPicker(String msgId) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: const Color(0xFFE2E8F0), borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 16),
+            const Text('React to message', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: _kEmojiOptions.map((emoji) {
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _toggleReaction(msgId, emoji);
+                  },
+                  child: Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Center(child: Text(emoji, style: const TextStyle(fontSize: 24))),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _toggleReaction(String msgId, String emoji) {
+    setState(() {
+      final state = _reactions.putIfAbsent(msgId, () => _MsgReactionState());
+      if (state.myReactions.contains(emoji)) {
+        state.myReactions.remove(emoji);
+        state.counts[emoji] = (state.counts[emoji] ?? 1) - 1;
+        if ((state.counts[emoji] ?? 0) <= 0) state.counts.remove(emoji);
+      } else {
+        state.myReactions.add(emoji);
+        state.counts[emoji] = (state.counts[emoji] ?? 0) + 1;
+      }
+    });
   }
 
   void _sendMessage() {
@@ -340,11 +401,7 @@ class _GroupChatTabState extends State<GroupChatTab> {
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          0.0,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
+        _scrollController.animateTo(0.0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
       }
     });
   }

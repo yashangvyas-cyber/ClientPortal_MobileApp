@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import '../models/organization.dart';
 
 class SmartHeader extends StatelessWidget implements PreferredSizeWidget {
   final Organization organization;
-  final String title; // Dynamic screen title (Deals / Projects / Messages)
-  final VoidCallback? onProfileTap;
+  final BusinessUnit currentUnit;
+  final VoidCallback? onBuTap;
 
   const SmartHeader({
     super.key,
     required this.organization,
-    required this.title,
-    this.onProfileTap,
+    required this.currentUnit,
+    this.onBuTap,
   });
 
   @override
@@ -30,22 +29,29 @@ class SmartHeader extends StatelessWidget implements PreferredSizeWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
           children: [
-            // ── Left: CollabCRM Logo ──
-            SvgPicture.asset(
-              'assets/collabcrm_logo.svg',
-              height: 32,
-              width: 32,
-            ),
-            const SizedBox(width: 12),
-
-            // ── Center: Current screen name ──
+            // ── Left: Business Unit Switcher ──
             Expanded(
-              child: Text(
-                title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 18,
-                  color: Color(0xFF0F172A),
+              child: GestureDetector(
+                onTap: onBuTap,
+                behavior: HitTestBehavior.opaque,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      currentUnit.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 18,
+                        color: Color(0xFF0F172A),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (organization.hasMultipleBusinessUnits) ...[
+                      const SizedBox(width: 4),
+                      const Icon(Icons.keyboard_arrow_down_rounded,
+                          size: 22, color: Color(0xFF4F46E5)),
+                    ],
+                  ],
                 ),
               ),
             ),
@@ -75,50 +81,12 @@ class SmartHeader extends StatelessWidget implements PreferredSizeWidget {
                       color: Color(0xFFEF4444),
                       shape: BoxShape.circle,
                       boxShadow: [
-                        BoxShadow(
-                            color: Colors.white,
-                            blurRadius: 0,
-                            spreadRadius: 1.5)
+                        BoxShadow(color: Colors.white, blurRadius: 0, spreadRadius: 1.5)
                       ],
                     ),
                   ),
                 ),
               ],
-            ),
-            const SizedBox(width: 10),
-
-            // ── Profile avatar → opens settings ──
-            GestureDetector(
-              onTap: onProfileTap,
-              child: Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF8B5CF6).withAlpha(60),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: const Center(
-                  child: Text(
-                    'JM',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
             ),
           ],
         ),
