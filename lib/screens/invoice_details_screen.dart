@@ -97,7 +97,7 @@ class InvoiceDetailsScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   _buildPartiesCard(),
                   const SizedBox(height: 16),
-                  _buildItemsCard(),
+                  _buildTotalAmountCard(),
                   const SizedBox(height: 16),
                    if (isPaid && invoice.payments.isNotEmpty) _buildRecordedPaymentsCard(context),
                    const SizedBox(height: 40),
@@ -171,38 +171,16 @@ class InvoiceDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildItemsCard() {
+  Widget _buildTotalAmountCard() {
     return _buildCard(
-      title: 'Items',
-      child: Column(
+      title: 'Total Amount',
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Expanded(
-                child: Text(
-                  'Test Service Implementation',
-                  style: TextStyle(fontSize: 14, color: Color(0xFF1E293B), fontWeight: FontWeight.w500),
-                ),
-              ),
-              Text(
-                invoice.amount,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          const Divider(height: 1, color: Color(0xFFF1F5F9)),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Total', style: TextStyle(fontSize: 14, color: Color(0xFF64748B))),
-              Text(
-                invoice.amount,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-              ),
-            ],
+          const Text('Amount', style: TextStyle(fontSize: 14, color: Color(0xFF64748B))),
+          Text(
+            invoice.amount,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
           ),
         ],
       ),
@@ -244,22 +222,23 @@ class InvoiceDetailsScreen extends StatelessWidget {
                       const SizedBox(width: 8),
                       InkWell(
                         onTap: () {
-                          showDialog(
+                          showModalBottomSheet(
                             context: context,
-                            builder: (context) => Dialog(
-                              backgroundColor: Colors.transparent,
-                              insetPadding: const EdgeInsets.all(16),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: Container(
-                                  width: double.infinity,
-                                  height: MediaQuery.of(context).size.height * 0.85,
-                                  color: Colors.white,
-                                  child: PaymentReceiptScreen(
-                                    payment: payment,
-                                    invoice: invoice,
-                                    organization: organization,
-                                  ),
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (ctx) => DraggableScrollableSheet(
+                              initialChildSize: 0.92,
+                              maxChildSize: 0.95,
+                              minChildSize: 0.5,
+                              builder: (_, controller) => Container(
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                                ),
+                                child: PaymentReceiptScreen(
+                                  payment: payment,
+                                  invoice: invoice,
+                                  organization: organization,
                                 ),
                               ),
                             ),
