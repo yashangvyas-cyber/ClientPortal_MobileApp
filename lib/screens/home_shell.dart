@@ -176,27 +176,12 @@ class _HomeShellState extends State<HomeShell> {
                                             color: isSelected ? const Color(0xFF4F46E5) : const Color(0xFF0F172A),
                                           ),
                                         ),
-                                        const SizedBox(height: 3),
-                                        Text(unit.description, style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
+                                        // Removed unit description tag/mark
                                       ],
                                     ),
                                   ),
                                   if (isSelected)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF4F46E5),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: const Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(Icons.check_rounded, size: 12, color: Colors.white),
-                                          SizedBox(width: 4),
-                                          Text('ACTIVE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 0.5)),
-                                        ],
-                                      ),
-                                    )
+                                    const SizedBox.shrink()
                                   else
                                     const Icon(Icons.chevron_right_rounded, color: Color(0xFFCBD5E1), size: 22),
                                 ],
@@ -370,12 +355,12 @@ class _HomeShellState extends State<HomeShell> {
               child: const Icon(Icons.logout_rounded, color: Color(0xFFEF4444), size: 32),
             ),
             const SizedBox(height: 24),
-            const Text('Log Out', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+            const Text('Sign Out', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
             const SizedBox(height: 12),
-            const Text(
-              'Are you sure you want to log out? You will need to re-enter your credentials to access your account.',
+            Text(
+              'Are you sure you want to sign out of ${widget.organization.name}?',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Color(0xFF64748B), fontSize: 14, height: 1.5),
+              style: const TextStyle(color: Color(0xFF64748B), fontSize: 14, height: 1.5),
             ),
             const SizedBox(height: 32),
             Row(
@@ -408,7 +393,7 @@ class _HomeShellState extends State<HomeShell> {
                       elevation: 0,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: const Text('Log Out', style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],

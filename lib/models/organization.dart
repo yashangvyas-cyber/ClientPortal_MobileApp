@@ -31,7 +31,7 @@ class Organization {
   static Organization yopmail() {
     return const Organization(
       id: 'org_1',
-      name: "Yashang's Company",
+      name: "Yopmail",
       code: 'yopmail',
       logoUrl: 'assets/logo.svg',
       hasMultipleBusinessUnits: true,
