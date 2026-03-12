@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/organization.dart';
 import '../models/message_data.dart';
+import '../widgets/members_bottom_sheet.dart';
 import 'project_messaging_detail_screen.dart';
 
 class MessagingScreen extends StatelessWidget {
@@ -112,8 +113,16 @@ class MessagingScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              // Stacked member avatars at bottom
-              _buildStackedAvatars(thread),
+              // Stacked member avatars pinned to bottom-right, tappable
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  GestureDetector(
+                    onTap: () => showMembersBottomSheet(context, thread),
+                    child: _buildStackedAvatars(thread),
+                  ),
+                ],
+              ),
             ],
           ),
         ),

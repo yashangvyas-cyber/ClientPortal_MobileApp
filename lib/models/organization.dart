@@ -1,12 +1,16 @@
+import 'package:flutter/material.dart';
+
 class BusinessUnit {
   final String id;
   final String name;
   final String description;
+  final Color iconColor;
 
   const BusinessUnit({
     required this.id,
     required this.name,
     required this.description,
+    this.iconColor = const Color(0xFF6366F1),
   });
 }
 
@@ -40,11 +44,13 @@ class Organization {
           id: 'bu_1',
           name: 'Yopmails',
           description: 'Primary Business Unit',
+          iconColor: Color(0xFF6366F1),
         ),
         BusinessUnit(
           id: 'bu_2',
           name: 'Star',
           description: 'Secondary Business Unit',
+          iconColor: Color(0xFF0EA5E9),
         ),
       ],
     );
