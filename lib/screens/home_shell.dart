@@ -5,6 +5,7 @@ import 'messaging_screen.dart';
 import 'projects_screen.dart';
 import 'deals_screen.dart';
 import 'change_password_screen.dart';
+import 'notification_preferences_screen.dart';
 import 'preferences_screen.dart';
 import 'org_selection_screen.dart';
 
@@ -281,6 +282,18 @@ class _HomeShellState extends State<HomeShell> {
               onTap: () {
                 Navigator.pop(ctx);
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const PreferencesScreen()));
+              },
+            ),
+            const Divider(height: 1, indent: 60, endIndent: 0, color: Color(0xFFF1F5F9)),
+            _profileDrawerItem(
+              ctx: ctx,
+              icon: Icons.notifications_outlined,
+              iconBg: const Color(0xFFFEF3C7),
+              iconColor: const Color(0xFFF59E0B),
+              label: 'Notification Preferences',
+              onTap: () {
+                Navigator.pop(ctx);
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationPreferencesScreen()));
               },
             ),
             const Divider(height: 1, indent: 60, endIndent: 0, color: Color(0xFFF1F5F9)),

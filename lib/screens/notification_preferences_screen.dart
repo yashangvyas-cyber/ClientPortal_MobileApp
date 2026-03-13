@@ -103,7 +103,15 @@ class _NotificationPreferencesScreenState
                 Row(
                   children: [
                     const Expanded(
-                      child: SizedBox(), // spacer for label column
+                      child: Text(
+                        'Activity',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF64748B),
+                          letterSpacing: 0.3,
+                        ),
+                      ),
                     ),
                     SizedBox(
                       width: 60,
