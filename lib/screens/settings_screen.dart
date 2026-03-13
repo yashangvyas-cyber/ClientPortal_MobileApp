@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/organization.dart';
 import 'change_password_screen.dart';
+import 'notification_preferences_screen.dart';
 import 'preferences_screen.dart';
 import 'org_selection_screen.dart';
 
@@ -493,6 +494,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   context,
                   MaterialPageRoute(
                       builder: (_) => const PreferencesScreen()),
+                ),
+              ),
+              _SettingsTile(
+                icon: Icons.notifications_outlined,
+                iconColor: const Color(0xFFF59E0B),
+                iconBg: const Color(0xFFFEF3C7),
+                label: 'Notification Preferences',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const NotificationPreferencesScreen()),
                 ),
               ),
             ],
