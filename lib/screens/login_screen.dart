@@ -213,7 +213,7 @@ class _LoginScreenState extends State<LoginScreen> {
               border: Border.all(color: const Color(0xFFC7D2FE)),
             ),
             child: const Text(
-              'CLIENT APP',
+              'CLIENT PORTAL',
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.bold,
@@ -250,46 +250,41 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildOrgInputOrChip() {
     if (_organization != null) {
-      return Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFFEEF2FF), // Indigo tinted
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFC7D2FE)),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: const Color(0xFF4F46E5),
-                borderRadius: BorderRadius.circular(8),
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Organization Code *',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF475569),
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextFormField(
+            initialValue: _organization!.code,
+            readOnly: true,
+            decoration: InputDecoration(
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              prefixIcon: const Icon(Icons.business_outlined,
+                  color: Color(0xFF94A3B8)),
+              suffixIcon: const Icon(Icons.check_circle,
+                  color: Color(0xFF22C55E), size: 20),
+              filled: true,
+              fillColor: const Color(0xFFF8FAFC),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
               ),
-              child: Center(
-                child: Text(
-                  _organization!.name.substring(0, 2).toUpperCase(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
               ),
             ),
-            const SizedBox(width: 12),
-            Text(
-              _organization!.name,
-              style: const TextStyle(
-                color: Color(0xFF4F46E5),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(width: 8),
-            const Icon(Icons.check, color: Color(0xFF4F46E5), size: 16),
-          ],
-        ),
+          ),
+        ],
       );
     }
     
@@ -437,20 +432,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-              if (widget.prefilledEmail != null) ...[
-                const SizedBox(height: 12),
-                GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: const Text(
-                    'Not you? Use a different email',
-                    style: TextStyle(
-                      color: Color(0xFF4F46E5),
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
-              ],
               const SizedBox(height: 20),
               const Text(
                 'Password *',
@@ -533,7 +514,12 @@ class _LoginScreenState extends State<LoginScreen> {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const ForgotPasswordScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => ForgotPasswordScreen(
+                      orgCode: _organization?.code,
+                      orgName: _organization?.name,
+                    ),
+                  ),
                 );
               },
               child: const Text(

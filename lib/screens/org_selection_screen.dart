@@ -4,6 +4,7 @@ import '../services/auth_storage.dart';
 import '../models/organization.dart';
 import 'login_screen.dart';
 import 'account_setup_flow.dart';
+import 'client_portal_sign_in_screen.dart';
 import 'home_shell.dart';
 
 class OrgSelectionScreen extends StatefulWidget {
@@ -48,26 +49,12 @@ class _OrgSelectionScreenState extends State<OrgSelectionScreen> {
   }
 
   void _navigateToLogin(SavedAccount account) {
-    if (account.hasActiveSession) {
-      final org = Organization.fromCode(account.orgCode);
-      if (org != null) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => HomeShell(organization: org),
-          ),
-        );
-        return;
-      }
-    }
-
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => LoginScreen(
-          workspaceId: account.orgCode,
+        builder: (context) => ClientPortalSignInScreen(
+          orgCode: account.orgCode,
           prefilledEmail: account.email,
-          isAddingNew: false,
         ),
       ),
     );
