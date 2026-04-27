@@ -17,6 +17,8 @@ class OrgSelectionScreen extends StatefulWidget {
 class _OrgSelectionScreenState extends State<OrgSelectionScreen> {
   List<SavedAccount> _savedAccounts = [];
   bool _isLoading = true;
+  // Dev-only: in-memory toggle to simulate no-session for a specific account
+  final Map<String, bool> _simulateNoSession = {};
 
   @override
   void initState() {
@@ -49,10 +51,24 @@ class _OrgSelectionScreenState extends State<OrgSelectionScreen> {
   }
 
   void _navigateToLogin(SavedAccount account) {
+    final key = '${account.orgCode}_${account.email}';
+    final forceSignIn = _simulateNoSession[key] ?? false;
+
+    if (!forceSignIn && account.hasActiveSession) {
+      final org = Organization.fromCode(account.orgCode);
+      if (org != null) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => HomeShell(organization: org)),
+        );
+        return;
+      }
+    }
+
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ClientPortalSignInScreen(
+        builder: (_) => ClientPortalSignInScreen(
           orgCode: account.orgCode,
           prefilledEmail: account.email,
         ),
@@ -198,12 +214,18 @@ class _OrgSelectionScreenState extends State<OrgSelectionScreen> {
     Color avatarColor = Color(0xFF000000 | (colorValue * 0x123456) % 0xFFFFFF).withOpacity(0.2);
     Color textColor = const Color(0xFF4F46E5); // Default indigo-ish
 
+    final key = '${account.orgCode}_${account.email}';
+    final simulating = _simulateNoSession[key] ?? false;
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: InkWell(
-        onTap: () => _navigateToLogin(account),
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
+      padding: const EdgeInsets.only(bottom: 4.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            onTap: () => _navigateToLogin(account),
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.white,
@@ -279,6 +301,37 @@ class _OrgSelectionScreenState extends State<OrgSelectionScreen> {
             ],
           ),
         ),
+      ),
+          // Dev toggle — simulate no-session for this account
+          Padding(
+            padding: const EdgeInsets.only(left: 12, bottom: 10),
+            child: Row(
+              children: [
+                Icon(
+                  simulating ? Icons.check_box_outline_blank : Icons.check_box,
+                  size: 11,
+                  color: const Color(0xFFCBD5E1),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  simulating ? 'Remember me: OFF' : 'Remember me: ON',
+                  style: const TextStyle(fontSize: 11, color: Color(0xFFCBD5E1)),
+                ),
+                const SizedBox(width: 6),
+                Transform.scale(
+                  scale: 0.7,
+                  child: Switch(
+                    value: simulating,
+                    onChanged: (val) => setState(() => _simulateNoSession[key] = val),
+                    activeColor: const Color(0xFFF97316),
+                    inactiveThumbColor: const Color(0xFFCBD5E1),
+                    inactiveTrackColor: const Color(0xFFE2E8F0),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
