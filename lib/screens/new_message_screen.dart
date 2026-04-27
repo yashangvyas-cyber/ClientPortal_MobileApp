@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import '../models/message_data.dart';
 
 class NewMessageScreen extends StatefulWidget {
@@ -10,36 +11,30 @@ class NewMessageScreen extends StatefulWidget {
 
 class _NewMessageScreenState extends State<NewMessageScreen> {
   final _titleController = TextEditingController();
-  final _bodyController = TextEditingController();
+  final _quillController = QuillController.basic();
 
-  // Visibility/Members state
   bool _jamesMitchellVisible = true;
   bool _superUserVisible = true;
-  
-  // Format state
-  final Set<String> _activeFormats = {};
-  
-  // Validation state
   bool _canPost = false;
 
   @override
   void initState() {
     super.initState();
     _titleController.addListener(_validateInputs);
-    _bodyController.addListener(_validateInputs);
+    _quillController.addListener(_validateInputs);
   }
-  
+
   void _validateInputs() {
-    final bool isValid = _titleController.text.trim().isNotEmpty && _bodyController.text.trim().isNotEmpty;
-    if (_canPost != isValid) {
-      setState(() => _canPost = isValid);
-    }
+    final bodyText = _quillController.document.toPlainText().trim();
+    final bool isValid =
+        _titleController.text.trim().isNotEmpty && bodyText.isNotEmpty && bodyText != '\n';
+    if (_canPost != isValid) setState(() => _canPost = isValid);
   }
 
   @override
   void dispose() {
     _titleController.dispose();
-    _bodyController.dispose();
+    _quillController.dispose();
     super.dispose();
   }
 
@@ -61,7 +56,6 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
         ),
         centerTitle: true,
         actions: [
-          // Edit Members
           IconButton(
             tooltip: 'Edit visible members',
             icon: const Icon(Icons.edit_outlined, color: Color(0xFF4F46E5)),
@@ -77,7 +71,7 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Visible To indicator
+                  // Visible To
                   GestureDetector(
                     onTap: _showEditMembersDialog,
                     child: Container(
@@ -91,13 +85,10 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
                         children: [
                           const Icon(Icons.visibility_outlined, size: 16, color: Color(0xFF4F46E5)),
                           const SizedBox(width: 8),
-                          const Text('Visible To: ', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+                          const Text('Visible To: ',
+                              style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
                           Expanded(
-                            child: Wrap(
-                              spacing: 6,
-                              runSpacing: 4,
-                              children: _buildVisibleChips(),
-                            ),
+                            child: Wrap(spacing: 6, runSpacing: 4, children: _buildVisibleChips()),
                           ),
                           const Icon(Icons.edit, size: 14, color: Color(0xFF4F46E5)),
                         ],
@@ -105,6 +96,7 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
+
                   // Title field
                   Container(
                     decoration: BoxDecoration(
@@ -114,17 +106,20 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
                     ),
                     child: TextField(
                       controller: _titleController,
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                      style: const TextStyle(
+                          fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
                       decoration: const InputDecoration(
                         hintText: 'Title of the message...',
-                        hintStyle: TextStyle(color: Color(0xFFCBD5E1), fontWeight: FontWeight.normal),
+                        hintStyle: TextStyle(
+                            color: Color(0xFFCBD5E1), fontWeight: FontWeight.normal),
                         contentPadding: EdgeInsets.all(16),
                         border: InputBorder.none,
                       ),
                     ),
                   ),
                   const SizedBox(height: 12),
-                  // Body field
+
+                  // Body: Quill toolbar + editor
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -132,33 +127,20 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
                       border: Border.all(color: const Color(0xFFE2E8F0)),
                     ),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Minimal formatting toolbar
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          decoration: const BoxDecoration(
-                            border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9))),
-                          ),
-                          child: Row(
-                            children: [
-                              _toolbarButton(Icons.format_bold, 'Bold'),
-                              _toolbarButton(Icons.format_italic, 'Italic'),
-                              _toolbarButton(Icons.format_underline, 'Underline'),
-                              const VerticalDivider(width: 20),
-                              _toolbarButton(Icons.format_list_bulleted, 'List'),
-                              _toolbarButton(Icons.link, 'Link'),
-                            ],
-                          ),
-                        ),
-                        TextField(
-                          controller: _bodyController,
-                          maxLines: 12,
-                          style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A), height: 1.5),
-                          decoration: const InputDecoration(
-                            hintText: 'Write your message here...',
-                            hintStyle: TextStyle(color: Color(0xFFCBD5E1)),
-                            contentPadding: EdgeInsets.all(16),
-                            border: InputBorder.none,
+                        // Custom toolbar
+                        _buildToolbar(),
+                        // Editor — scrollable:false required because parent is SingleChildScrollView
+                        SizedBox(
+                          height: 250,
+                          child: QuillEditor.basic(
+                            controller: _quillController,
+                            config: const QuillEditorConfig(
+                              placeholder: 'Write your message here...',
+                              padding: EdgeInsets.all(16),
+                              scrollable: false,
+                            ),
                           ),
                         ),
                       ],
@@ -168,6 +150,7 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
               ),
             ),
           ),
+
           // Bottom action bar
           Container(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
@@ -181,7 +164,7 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
                   child: OutlinedButton(
                     onPressed: () => Navigator.pop(context),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Color(0xFF64748B),
+                      foregroundColor: const Color(0xFF64748B),
                       side: const BorderSide(color: Color(0xFFE2E8F0)),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -194,8 +177,10 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
                   child: ElevatedButton(
                     onPressed: _canPost ? _postMessage : null,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: _canPost ? const Color(0xFF4F46E5) : const Color(0xFFE2E8F0),
-                      foregroundColor: _canPost ? Colors.white : const Color(0xFF94A3B8),
+                      backgroundColor:
+                          _canPost ? const Color(0xFF4F46E5) : const Color(0xFFE2E8F0),
+                      foregroundColor:
+                          _canPost ? Colors.white : const Color(0xFF94A3B8),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       elevation: _canPost ? 2 : 0,
@@ -218,48 +203,75 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
     );
   }
 
-  Widget _toolbarButton(IconData icon, String tooltip) {
-    final bool isActive = _activeFormats.contains(tooltip);
-    return Padding(
-      padding: const EdgeInsets.only(right: 4),
+  Widget _buildToolbar() {
+    final style = _quillController.getSelectionStyle();
+    final isBold = style.containsKey(Attribute.bold.key);
+    final isItalic = style.containsKey(Attribute.italic.key);
+    final isUnderline = style.containsKey(Attribute.underline.key);
+    final isBullet = style.attributes[Attribute.list.key]?.value == 'bullet';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9))),
+      ),
+      child: Row(
+        children: [
+          _fmtBtn(Icons.format_bold, isBold, () {
+            _quillController.formatSelection(
+                isBold ? Attribute.clone(Attribute.bold, null) : Attribute.bold);
+          }),
+          _fmtBtn(Icons.format_italic, isItalic, () {
+            _quillController.formatSelection(
+                isItalic ? Attribute.clone(Attribute.italic, null) : Attribute.italic);
+          }),
+          _fmtBtn(Icons.format_underline, isUnderline, () {
+            _quillController.formatSelection(isUnderline
+                ? Attribute.clone(Attribute.underline, null)
+                : Attribute.underline);
+          }),
+          const SizedBox(width: 4),
+          Container(width: 1, height: 20, color: const Color(0xFFE2E8F0)),
+          const SizedBox(width: 4),
+          _fmtBtn(Icons.format_list_bulleted, isBullet, () {
+            _quillController.formatSelection(
+                isBullet ? Attribute.clone(Attribute.ul, null) : Attribute.ul);
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _fmtBtn(IconData icon, bool active, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(4),
       child: Container(
+        width: 32,
+        height: 32,
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFFEEF2FF) : Colors.transparent,
+          color: active ? const Color(0xFFEEF2FF) : Colors.transparent,
           borderRadius: BorderRadius.circular(4),
         ),
-        child: IconButton(
-          icon: Icon(icon, size: 18, color: isActive ? const Color(0xFF4F46E5) : const Color(0xFF64748B)),
-          tooltip: tooltip,
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-          onPressed: () {
-            setState(() {
-              if (isActive) {
-                _activeFormats.remove(tooltip);
-              } else {
-                _activeFormats.add(tooltip);
-              }
-            });
-          },
-        ),
+        child: Icon(icon, size: 18,
+            color: active ? const Color(0xFF4F46E5) : const Color(0xFF64748B)),
       ),
     );
   }
 
   List<Widget> _buildVisibleChips() {
     final chips = <Widget>[];
-    if (_jamesMitchellVisible) {
-      chips.add(_personChip('James Mitchell', 'JM'));
-    }
-    if (_superUserVisible) {
-      chips.add(_personChip('Super User', 'SU'));
-    }
+    if (_jamesMitchellVisible) chips.add(_personChip('James Mitchell', 'JM'));
+    if (_superUserVisible) chips.add(_personChip('Super User', 'SU'));
     if (chips.isEmpty) {
-      chips.add(const Text('Nobody', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF4F46E5))));
+      chips.add(const Text('Nobody',
+          style: TextStyle(
+              fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF4F46E5))));
     }
     return chips;
   }
-  
+
   Widget _personChip(String name, String initials) {
     return Container(
       padding: const EdgeInsets.only(right: 8, top: 2, bottom: 2, left: 2),
@@ -274,21 +286,17 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
           CircleAvatar(
             radius: 10,
             backgroundColor: const Color(0xFF8B5CF6),
-            child: Text(initials, style: const TextStyle(fontSize: 8, color: Colors.white, fontWeight: FontWeight.bold)),
+            child: Text(initials,
+                style: const TextStyle(
+                    fontSize: 8, color: Colors.white, fontWeight: FontWeight.bold)),
           ),
           const SizedBox(width: 6),
-          Text(name, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF4F46E5))),
+          Text(name,
+              style: const TextStyle(
+                  fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF4F46E5))),
         ],
       ),
     );
-  }
-
-  String _visibleToText() {
-    final visible = <String>[];
-    if (_jamesMitchellVisible) visible.add('James Mitchell');
-    if (_superUserVisible) visible.add('Super User');
-    if (visible.isEmpty) return 'Nobody';
-    return visible.join(', ');
   }
 
   void _showEditMembersDialog() {
@@ -307,7 +315,6 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Drag handle
               Center(
                 child: Container(
                   width: 40,
@@ -322,7 +329,11 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Edit Members', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                  const Text('Edit Members',
+                      style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF0F172A))),
                   IconButton(
                     icon: const Icon(Icons.close, size: 20, color: Color(0xFF64748B)),
                     onPressed: () => Navigator.pop(ctx),
@@ -332,19 +343,29 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
                 ],
               ),
               const SizedBox(height: 24),
-              const Text('Client', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF94A3B8), letterSpacing: 1.2)),
+              const Text('Client',
+                  style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF94A3B8),
+                      letterSpacing: 1.2)),
               const Divider(color: Color(0xFFF1F5F9)),
               Opacity(
                 opacity: 0.6,
                 child: _memberCheckboxRow(
                   initials: 'JM',
                   name: 'James Mitchell (You)',
-                  value: true, // Locked to true
-                  onChanged: null, // Disabled
+                  value: true,
+                  onChanged: null,
                 ),
               ),
               const SizedBox(height: 16),
-              const Text('Yopmails', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF94A3B8), letterSpacing: 1.2)),
+              const Text('Yopmails',
+                  style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF94A3B8),
+                      letterSpacing: 1.2)),
               const Divider(color: Color(0xFFF1F5F9)),
               _memberCheckboxRow(
                 initials: 'SU',
@@ -352,7 +373,7 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
                 value: _superUserVisible,
                 onChanged: (val) {
                   setSheetState(() => _superUserVisible = val ?? true);
-                  setState(() {}); // Update underlying screen
+                  setState(() {});
                 },
               ),
               const SizedBox(height: 32),
@@ -395,7 +416,8 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
               decoration: BoxDecoration(
                 color: value ? const Color(0xFF4F46E5) : Colors.white,
                 borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: value ? const Color(0xFF4F46E5) : const Color(0xFFCBD5E1)),
+                border: Border.all(
+                    color: value ? const Color(0xFF4F46E5) : const Color(0xFFCBD5E1)),
               ),
               child: value ? const Icon(Icons.check, size: 14, color: Colors.white) : null,
             ),
@@ -403,10 +425,16 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
             CircleAvatar(
               radius: 14,
               backgroundColor: const Color(0xFF8B5CF6),
-              child: Text(initials, style: const TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
+              child: Text(initials,
+                  style: const TextStyle(
+                      fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
             ),
             const SizedBox(width: 10),
-            Expanded(child: Text(name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF0F172A)))),
+            Expanded(
+              child: Text(name,
+                  style: const TextStyle(
+                      fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF0F172A))),
+            ),
           ],
         ),
       ),
@@ -415,15 +443,8 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
 
   void _postMessage() {
     if (!_canPost) return;
-    
     final title = _titleController.text.trim();
-    final body = _bodyController.text.trim();
-    if (title.isEmpty || body.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in the title and message body.')),
-      );
-      return;
-    }
+    final body = _quillController.document.toPlainText().trim();
     final newPost = BoardPost(
       id: 'post-${DateTime.now().millisecondsSinceEpoch}',
       authorName: 'James Mitchell',

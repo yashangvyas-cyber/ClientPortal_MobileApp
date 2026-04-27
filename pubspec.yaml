@@ -12,6 +12,7 @@ dependencies:
   flutter_svg: ^2.0.10+1
   device_frame: ^1.2.0
   shared_preferences: ^2.5.4
+  flutter_quill: ^11.5.0
 
 dev_dependencies:
   flutter_test:
