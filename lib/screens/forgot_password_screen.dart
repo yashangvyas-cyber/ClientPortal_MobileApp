@@ -102,6 +102,29 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         ),
         const SizedBox(height: 20),
 
+        // CLIENT PORTAL badge (right-aligned)
+        Align(
+          alignment: Alignment.centerRight,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEEF2FF),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFC7D2FE)),
+            ),
+            child: const Text(
+              'CLIENT PORTAL',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF4338CA),
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+
         // Logo — SVG already contains "CollabCRM" text, no extra label needed
         SvgPicture.asset('assets/logo.svg', height: 28),
         const SizedBox(height: 24),
