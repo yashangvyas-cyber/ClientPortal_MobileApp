@@ -37,21 +37,11 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> with Single
   }
 
   Future<void> _selectCustomDate() async {
-    final DateTimeRange? picked = await showDateRangePicker(
+    final DateTimeRange? picked = await showModalBottomSheet<DateTimeRange>(
       context: context,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
-      builder: (context, child) {
-        return Theme(
-          data: ThemeData.light().copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFF0F172A),
-              onPrimary: Colors.white,
-            ),
-          ),
-          child: child!,
-        );
-      },
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const _DateRangePickerSheet(),
     );
     if (picked != null) {
       setState(() {
@@ -1308,6 +1298,257 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> with Single
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Custom in-app date range picker ─────────────────────────────────────────
+
+class _DateRangePickerSheet extends StatefulWidget {
+  const _DateRangePickerSheet();
+
+  @override
+  State<_DateRangePickerSheet> createState() => _DateRangePickerSheetState();
+}
+
+class _DateRangePickerSheetState extends State<_DateRangePickerSheet> {
+  DateTime? _start;
+  DateTime? _end;
+
+  static const _monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
+  ];
+  static const _dayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+
+  void _onDayTap(DateTime date) {
+    setState(() {
+      if (_start == null || (_start != null && _end != null)) {
+        _start = date;
+        _end = null;
+      } else if (_isSameDay(date, _start!)) {
+        _start = null;
+      } else if (date.isBefore(_start!)) {
+        _end = _start;
+        _start = date;
+      } else {
+        _end = date;
+      }
+    });
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+
+  bool _isStart(DateTime d) => _start != null && _isSameDay(d, _start!);
+  bool _isEnd(DateTime d) => _end != null && _isSameDay(d, _end!);
+  bool _isInRange(DateTime d) {
+    if (_start == null || _end == null) return false;
+    return d.isAfter(_start!) && d.isBefore(_end!);
+  }
+
+  String _displayDate(DateTime? d) {
+    if (d == null) return 'End Date';
+    const m = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${m[d.month - 1]} ${d.day}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final currentMonth = DateTime(now.year, now.month, 1);
+
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.85,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        children: [
+          const SizedBox(height: 12),
+          Container(
+            width: 40, height: 4,
+            decoration: BoxDecoration(
+              color: const Color(0xFFE2E8F0),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Top bar: close | range display | save
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: const Icon(Icons.close, color: Color(0xFF64748B)),
+                ),
+                Column(
+                  children: [
+                    const Text('Select range',
+                        style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
+                    Text(
+                      '${_displayDate(_start)} – ${_displayDate(_end)}',
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                    ),
+                  ],
+                ),
+                GestureDetector(
+                  onTap: (_start != null && _end != null)
+                      ? () => Navigator.pop(
+                            context,
+                            DateTimeRange(start: _start!, end: _end!),
+                          )
+                      : null,
+                  child: Text(
+                    'Save',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: (_start != null && _end != null)
+                          ? const Color(0xFF4F46E5)
+                          : const Color(0xFFCBD5E1),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Divider(height: 1, color: Color(0xFFF1F5F9)),
+          // Day-of-week header row
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: _dayLabels
+                  .map((d) => SizedBox(
+                        width: 36,
+                        child: Text(d,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF94A3B8))),
+                      ))
+                  .toList(),
+            ),
+          ),
+          const Divider(height: 1, color: Color(0xFFF1F5F9)),
+          // Scrollable months
+          Expanded(
+            child: ListView.builder(
+              itemCount: 12,
+              itemBuilder: (ctx, i) {
+                final month =
+                    DateTime(currentMonth.year, currentMonth.month + i, 1);
+                return _buildMonthBlock(month);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMonthBlock(DateTime month) {
+    final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
+    // Dart weekday: Mon=1…Sun=7 → convert to Sun=0…Sat=6
+    final firstWeekday = month.weekday % 7;
+
+    final items = <DateTime?>[
+      ...List.generate(firstWeekday, (_) => null),
+      ...List.generate(daysInMonth, (i) => DateTime(month.year, month.month, i + 1)),
+    ];
+    while (items.length % 7 != 0) items.add(null);
+
+    final rows = <TableRow>[];
+    for (int i = 0; i < items.length; i += 7) {
+      rows.add(TableRow(
+        children: items.sublist(i, i + 7).map((date) {
+          if (date == null) return const SizedBox(height: 44);
+          return _buildDayCell(date);
+        }).toList(),
+      ));
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+          child: Text(
+            '${_monthNames[month.month - 1]} ${month.year}',
+            style: const TextStyle(
+                fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Table(children: rows),
+        ),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+
+  Widget _buildDayCell(DateTime date) {
+    final isStart = _isStart(date);
+    final isEnd = _isEnd(date);
+    final inRange = _isInRange(date);
+
+    return GestureDetector(
+      onTap: () => _onDayTap(date),
+      child: SizedBox(
+        height: 44,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // Range strip: half-cell for endpoints, full-cell for in-range
+            if ((isStart && _end != null) || (isEnd && _start != null))
+              Positioned.fill(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        color: isStart ? Colors.transparent : const Color(0xFFEEF2FF),
+                      ),
+                    ),
+                    Expanded(
+                      child: Container(
+                        color: isEnd ? Colors.transparent : const Color(0xFFEEF2FF),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else if (inRange)
+              Positioned.fill(child: Container(color: const Color(0xFFEEF2FF))),
+            // Circle for start/end
+            if (isStart || isEnd)
+              Container(
+                width: 36,
+                height: 36,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF0F172A),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            Text(
+              '${date.day}',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: (isStart || isEnd) ? FontWeight.bold : FontWeight.normal,
+                color: (isStart || isEnd) ? Colors.white : const Color(0xFF0F172A),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

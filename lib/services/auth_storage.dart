@@ -92,4 +92,10 @@ class AuthStorage {
         jsonEncode(accounts.map((a) => a.toJson()).toList());
     await prefs.setString(_accountsKey, encodedList);
   }
+
+  // Clear all saved accounts
+  static Future<void> clearAllAccounts() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_accountsKey);
+  }
 }

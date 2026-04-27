@@ -5,6 +5,11 @@ import '../services/auth_storage.dart';
 import 'home_shell.dart';
 import 'forgot_password_screen.dart';
 
+// Dev test credentials — visible only on the Add Organisation screen
+const _kDevOrgCode = 'yopmail';
+const _kDevEmail = 'sdf@sdf.ok';
+const _kDevPassword = 'password123';
+
 class LoginScreen extends StatefulWidget {
   final String? workspaceId;
   final String? prefilledEmail;
@@ -51,6 +56,15 @@ class _LoginScreenState extends State<LoginScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  void _autofillDevCredentials() {
+    setState(() {
+      _orgCodeController.text = _kDevOrgCode;
+      _emailController.text = _kDevEmail;
+      _passwordController.text = _kDevPassword;
+      _organization = Organization.fromCode(_kDevOrgCode);
+    });
   }
 
   void _handleSignIn() async {
@@ -344,11 +358,40 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          widget.isAddingNew 
-              ? 'Enter your details to connect a new organisation' 
+          widget.isAddingNew
+              ? 'Enter your details to connect a new organisation'
               : 'Sign in to continue to your portal',
           style: const TextStyle(fontSize: 14, color: Color(0xFF64748B)),
         ),
+        if (widget.isAddingNew) ...[
+          const SizedBox(height: 14),
+          GestureDetector(
+            onTap: _autofillDevCredentials,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF7ED),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFFED7AA)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Icon(Icons.bolt, size: 14, color: Color(0xFFF97316)),
+                  SizedBox(width: 6),
+                  Text(
+                    'Autofill Dev Credentials',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFFF97316),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
         const SizedBox(height: 32),
         Form(
           key: _formKey,

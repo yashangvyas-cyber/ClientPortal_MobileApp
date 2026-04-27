@@ -85,58 +85,79 @@ class _OrgSelectionScreenState extends State<OrgSelectionScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Container(
-              padding: const EdgeInsets.all(32.0),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(12),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeader(),
-                  const SizedBox(height: 32),
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      _savedAccounts.isEmpty ? 'Welcome to CollabCRM' : 'Your Organisations',
-                      style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF0F172A),
-                      ),
+        child: Column(
+          children: [
+            Expanded(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Container(
+                    padding: const EdgeInsets.all(32.0),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withAlpha(12),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildHeader(),
+                        const SizedBox(height: 32),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            _savedAccounts.isEmpty ? 'Welcome to CollabCRM' : 'Your Organisations',
+                            style: const TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF0F172A),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _savedAccounts.isEmpty
+                              ? 'Get started by connecting with organisation'
+                              : 'Select an organisation to continue',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                        ..._savedAccounts.map((account) => _buildOrgCard(account)),
+                        const SizedBox(height: 16),
+                        _buildAddAnotherButton(),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _savedAccounts.isEmpty
-                        ? 'Get started by connecting with organisation'
-                        : 'Select an organisation to continue',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Color(0xFF64748B),
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  ..._savedAccounts.map((account) => _buildOrgCard(account)),
-                  const SizedBox(height: 16),
-                  _buildAddAnotherButton(),
-                ],
+                ),
               ),
             ),
-          ),
+            // Temporary dev shortcut — reset to no-accounts landing state
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: TextButton.icon(
+                onPressed: () async {
+                  await AuthStorage.clearAllAccounts();
+                  await _loadAccounts();
+                },
+                icon: const Icon(Icons.refresh, size: 14, color: Color(0xFFCBD5E1)),
+                label: const Text(
+                  'Temporary Back',
+                  style: TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
